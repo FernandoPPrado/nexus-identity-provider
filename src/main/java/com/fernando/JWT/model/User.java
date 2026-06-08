@@ -1,5 +1,6 @@
 package com.fernando.JWT.model;
 
+import com.fernando.JWT.enums.UserRoles;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 
@@ -19,6 +20,10 @@ public class User {
 
     @Size(min = 6, max = 15)
     private String userPassword;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, unique = false)
+    private UserRoles userRoles;
 
     @Column(nullable = false)
     private UUID project_id;
