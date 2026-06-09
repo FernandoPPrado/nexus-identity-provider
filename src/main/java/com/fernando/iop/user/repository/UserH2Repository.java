@@ -1,7 +1,7 @@
-package com.fernando.JWT.repository;
+package com.fernando.iop.user.repository;
 
-import com.fernando.JWT.dto.UserEntityResponseDTO;
-import com.fernando.JWT.model.User;
+import com.fernando.iop.user.dto.UserEntityResponseDTO;
+import com.fernando.iop.user.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

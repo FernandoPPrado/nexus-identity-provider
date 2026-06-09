@@ -1,6 +1,6 @@
-package com.fernando.JWT.model;
+package com.fernando.iop.user.model;
 
-import com.fernando.JWT.enums.UserRoles;
+import com.fernando.iop.user.enums.UserRoles;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 

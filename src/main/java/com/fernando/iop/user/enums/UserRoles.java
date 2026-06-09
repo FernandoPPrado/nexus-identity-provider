@@ -1,4 +1,4 @@
-package com.fernando.JWT.enums;
+package com.fernando.iop.user.enums;
 
 public enum UserRoles {
     ROLE_ADMIN,
