@@ -1,4 +1,4 @@
-package com.fernando.JWT;
+package com.fernando.iop;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

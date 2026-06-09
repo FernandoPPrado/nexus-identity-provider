@@ -1,4 +1,4 @@
-package com.fernando.JWT;
+package com.fernando.iop;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

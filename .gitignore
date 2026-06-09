@@ -18,3 +18,8 @@ replay_pid*
 .vscode/
 
 application.properties
+
+# Chaves Criptográficas Locais (Nunca comitar)
+/CHAVES/
+*.pem
+private.pem
