@@ -6,8 +6,8 @@ import java.util.UUID;
 
 public record UserEntityResponseDTO(
 
-        Long userEmail,
-        String userId,
+        String userEmail,
+        Long userId,
         UUID projectId,
         UserRoles userRoles
 
