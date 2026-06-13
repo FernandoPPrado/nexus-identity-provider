@@ -5,9 +5,14 @@ import com.fernando.iop.user.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 public interface UserH2Repository extends JpaRepository<User, Long> {
 
-    public Optional<UserEntityResponseDTO> findByUserEmail(String email);
+    public Optional<User> findByUserId(Long id);
+
+    public Optional<User> findByUserEmailAndProjectId(String email, UUID projectId);
+
+    public boolean existsByUserEmailAndProjectId(String email, UUID projectId);
 
 }
