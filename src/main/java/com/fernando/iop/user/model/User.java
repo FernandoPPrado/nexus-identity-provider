@@ -26,7 +26,52 @@ public class User {
     private UserRoles userRoles;
 
     @Column(nullable = false)
-    private UUID project_id;
+    private UUID projectId;
 
+    public User(String userEmail, String userPassword, UserRoles userRoles, UUID projectId) {
+        this.userEmail = userEmail;
+        this.userPassword = userPassword;
+        this.userRoles = userRoles;
+        this.projectId = projectId;
+    }
 
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public String getUserEmail() {
+        return userEmail;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
+    }
+
+    public String getUserPassword() {
+        return userPassword;
+    }
+
+    public void setUserPassword(String userPassword) {
+        this.userPassword = userPassword;
+    }
+
+    public UserRoles getUserRoles() {
+        return userRoles;
+    }
+
+    public void setUserRoles(UserRoles userRoles) {
+        this.userRoles = userRoles;
+    }
+
+    public UUID getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(UUID projectId) {
+        this.projectId = projectId;
+    }
 }
