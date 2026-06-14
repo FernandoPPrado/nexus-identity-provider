@@ -20,7 +20,7 @@ public class TokenService {
     public String generateToken(UserEntityResponseDTO userEntityResponseDTO) {
         JwtClaimsSet jwtClaimsSet = JwtClaimsSet.builder().issuer("idp").subject(userEntityResponseDTO.userId().toString()).issuedAt(Instant.now()).
                 expiresAt(Instant.now().plusSeconds(3600)).
-                claim("projectId", userEntityResponseDTO.projectId()).
+                claim("projectId", userEntityResponseDTO.project().getProjectId()).
                 claim("email", userEntityResponseDTO.userEmail()).claim("roles", userEntityResponseDTO.userRoles()).build();
 
         return jwtEncoder.encode(JwtEncoderParameters.from(jwtClaimsSet)).getTokenValue();
