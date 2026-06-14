@@ -1,5 +1,6 @@
 package com.fernando.iop.user.model;
 
+import com.fernando.iop.project.model.Project;
 import com.fernando.iop.user.enums.UserRoles;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
@@ -18,21 +19,22 @@ public class User {
     @Column(unique = true, nullable = false)
     private String userEmail;
 
-    @Size(min = 6, max = 15)
+    @Size(min = 6)
     private String userPassword;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, unique = false)
     private UserRoles userRoles;
 
-    @Column(nullable = false)
-    private UUID projectId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id", nullable = false)
+    private Project project;
 
-    public User(String userEmail, String userPassword, UserRoles userRoles, UUID projectId) {
+    public User(String userEmail, String userPassword, UserRoles userRoles, Project project) {
         this.userEmail = userEmail;
         this.userPassword = userPassword;
         this.userRoles = userRoles;
-        this.projectId = projectId;
+        this.project = project;
     }
 
     public Long getUserId() {
@@ -67,11 +69,11 @@ public class User {
         this.userRoles = userRoles;
     }
 
-    public UUID getProjectId() {
-        return projectId;
+    public Project getProject() {
+        return project;
     }
 
-    public void setProjectId(UUID projectId) {
-        this.projectId = projectId;
+    public void setProjectId(Project project) {
+        this.project = project;
     }
 }
