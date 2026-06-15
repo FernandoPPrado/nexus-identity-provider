@@ -45,6 +45,9 @@ public class User {
         this.project = project;
     }
 
+    public User() {
+    }
+
     public Long getUserId() {
         return userId;
     }
