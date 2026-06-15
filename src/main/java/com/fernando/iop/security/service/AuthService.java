@@ -1,6 +1,7 @@
 package com.fernando.iop.security.service;
 
 import com.fernando.iop.dto.AuthRequestDTO;
+import com.fernando.iop.dto.AuthResponseDTO;
 import com.fernando.iop.project.model.Project;
 import com.fernando.iop.project.repository.ProjectRepository;
 import com.fernando.iop.user.dto.UserEntityResponseDTO;
@@ -30,13 +31,13 @@ public class AuthService {
     }
 
 
-    public String userLogin(AuthRequestDTO authRequestDTO) {
+    public AuthResponseDTO userLogin(AuthRequestDTO authRequestDTO) {
 
         User user = userH2Repository.findByUserEmailAndProject_ProjectId(authRequestDTO.email(), authRequestDTO.projectId()).orElseThrow(() -> new EntityNotFoundException("Entidade nao localizada"));
         if (!bCrypt.matches(authRequestDTO.password(), user.getUserPassword())) {
             throw new BadCredentialsException("Credenciais incorretas");
         } else {
-            return tokenService.generateToken(new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), UserRoles.ROLE_USER));
+            return new AuthResponseDTO(user.getUserId(), user.getUserEmail(), tokenService.generateToken(new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles())));
         }
 
     }
