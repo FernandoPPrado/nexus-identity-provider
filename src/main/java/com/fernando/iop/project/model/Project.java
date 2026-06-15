@@ -1,9 +1,9 @@
 package com.fernando.iop.project.model;
 
-import com.fernando.iop.user.model.User;
+
 import jakarta.persistence.*;
 
-import java.util.List;
+
 import java.util.UUID;
 
 
@@ -11,11 +11,13 @@ import java.util.UUID;
 public class Project {
 
     @Id
-    @Column(unique = true, nullable = false)
     private UUID projectId;
 
     public Project(UUID projectId) {
         this.projectId = projectId;
+    }
+
+    public Project() {
     }
 
     public UUID getProjectId() {
