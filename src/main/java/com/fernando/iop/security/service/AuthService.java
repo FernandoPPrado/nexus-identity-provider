@@ -32,7 +32,7 @@ public class AuthService {
 
     public String userLogin(AuthRequestDTO authRequestDTO) {
 
-        User user = userH2Repository.findByUserEmailAndProjectId(authRequestDTO.email(), authRequestDTO.projectId()).orElseThrow(() -> new EntityNotFoundException("Entidade nao localizada"));
+        User user = userH2Repository.findByUserEmailAndProject_ProjectId(authRequestDTO.email(), authRequestDTO.projectId()).orElseThrow(() -> new EntityNotFoundException("Entidade nao localizada"));
         if (!bCrypt.matches(authRequestDTO.password(), user.getUserPassword())) {
             throw new BadCredentialsException("Credenciais incorretas");
         } else {
@@ -43,14 +43,17 @@ public class AuthService {
 
     public String createUser(AuthRequestDTO authRequestDTO) {
 
-        if (userH2Repository.existsByUserEmailAndProjectId(authRequestDTO.email(), authRequestDTO.projectId()) || !projectRepository.existsByProjectId(authRequestDTO.projectId())) {
-            throw new EntityExistsException();
-        } else {
-            User user = new User(authRequestDTO.email(), bCrypt.encode(authRequestDTO.password()), UserRoles.ROLE_USER, new Project(authRequestDTO.projectId()));
-            userH2Repository.save(user);
-            return tokenService.generateToken(new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles()));
+        if (userH2Repository.existsByUserEmailAndProject_ProjectId(authRequestDTO.email(), authRequestDTO.projectId())) {
+            throw new EntityExistsException("Usuario já cadastrado");
         }
 
+        if (!projectRepository.existsByProjectId(authRequestDTO.projectId())) {
+            throw new EntityNotFoundException("Projeto nao localizado");
+        }
+
+        User user = new User(authRequestDTO.email(), bCrypt.encode(authRequestDTO.password()), UserRoles.ROLE_USER, new Project(authRequestDTO.projectId()));
+        userH2Repository.save(user);
+        return tokenService.generateToken(new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles()));
 
     }
 
