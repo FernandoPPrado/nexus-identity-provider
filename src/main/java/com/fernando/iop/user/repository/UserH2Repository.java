@@ -11,8 +11,8 @@ public interface UserH2Repository extends JpaRepository<User, Long> {
 
     public Optional<User> findByUserId(Long id);
 
-    public Optional<User> findByUserEmailAndProjectId(String email, UUID projectId);
+    public Optional<User> findByUserEmailAndProject_ProjectId(String email, UUID projectId);
 
-    public boolean existsByUserEmailAndProjectId(String email, UUID projectId);
+    public boolean existsByUserEmailAndProject_ProjectId(String email, UUID projectId);
 
 }
