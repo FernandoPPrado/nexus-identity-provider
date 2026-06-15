@@ -8,7 +8,15 @@ import jakarta.validation.constraints.Size;
 import java.util.UUID;
 
 @Entity
-@Table(name = "user_table")
+@Table(name = "user_table",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_user_email_project",
+                        columnNames = {"userEmail", "project_id"}
+                )
+        }
+
+)
 public class User {
 
     @Id
@@ -16,7 +24,7 @@ public class User {
     private Long userId;
 
     @Size(max = 128)
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String userEmail;
 
     @Size(min = 6)
@@ -73,7 +81,7 @@ public class User {
         return project;
     }
 
-    public void setProjectId(Project project) {
+    public void setProject(Project project) {
         this.project = project;
     }
 }
