@@ -32,9 +32,14 @@ public class UserService {
 
     public void createUser(String email, String password, Project project, UserRoles roles) {
 
-        if (userH2Repository.existsByUserEmailAndProject_ProjectId(email, project.getProjectId()) || !projectRepository.existsByProjectId(project.getProjectId())) {
-            throw new EntityExistsException();
+        if (!projectRepository.existsByProjectId(project.getProjectId())) {
+            throw new EntityNotFoundException("Projeto não localizado");
         }
+
+        if (userH2Repository.existsByUserEmailAndProject_ProjectId(email, project.getProjectId())) {
+            throw new EntityExistsException("Usuário já cadastrado neste projeto");
+        }
+
         userH2Repository.save(new User(email, password, UserRoles.ROLE_USER, project));
 
 
