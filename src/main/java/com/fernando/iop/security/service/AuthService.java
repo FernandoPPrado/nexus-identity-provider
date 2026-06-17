@@ -10,6 +10,7 @@ import com.fernando.iop.user.model.User;
 import com.fernando.iop.user.repository.UserH2Repository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,7 +43,7 @@ public class AuthService {
 
     }
 
-    public String createUser(AuthRequestDTO authRequestDTO) {
+    public AuthResponseDTO createUser(AuthRequestDTO authRequestDTO) {
 
         if (userH2Repository.existsByUserEmailAndProject_ProjectId(authRequestDTO.email(), authRequestDTO.projectId())) {
             throw new EntityExistsException("Usuario já cadastrado");
@@ -51,10 +52,9 @@ public class AuthService {
         if (!projectRepository.existsByProjectId(authRequestDTO.projectId())) {
             throw new EntityNotFoundException("Projeto nao localizado");
         }
-
         User user = new User(authRequestDTO.email(), bCrypt.encode(authRequestDTO.password()), UserRoles.ROLE_USER, new Project(authRequestDTO.projectId()));
         userH2Repository.save(user);
-        return tokenService.generateToken(new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles()));
+        return new AuthResponseDTO(user.getUserId(), user.getUserEmail(), tokenService.generateToken(new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles())));
 
     }
 
