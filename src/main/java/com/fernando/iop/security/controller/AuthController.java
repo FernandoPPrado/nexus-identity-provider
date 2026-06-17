@@ -1,8 +1,8 @@
 package com.fernando.iop.security.controller;
-
 import com.fernando.iop.dto.AuthRequestDTO;
 import com.fernando.iop.dto.AuthResponseDTO;
 import com.fernando.iop.security.service.AuthService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,5 +23,11 @@ public class AuthController {
         return ResponseEntity.ok().body(authService.userLogin(authRequestDTO));
 
     }
+
+    @PostMapping(path = "/register")
+    public ResponseEntity<AuthResponseDTO> createAccount(@RequestBody AuthRequestDTO authRequestDTO) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.createUser(authRequestDTO));
+    }
+
 
 }
