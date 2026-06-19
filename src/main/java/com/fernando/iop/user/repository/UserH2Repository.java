@@ -15,4 +15,7 @@ public interface UserH2Repository extends JpaRepository<User, Long> {
 
     public boolean existsByUserEmailAndProject_ProjectId(String email, UUID projectId);
 
+    public Optional<User> findByUserEmailAndProject_ProjectIdAndActiveTrue(String email, UUID projectId);
+
+
 }
