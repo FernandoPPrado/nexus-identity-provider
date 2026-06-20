@@ -1,4 +1,4 @@
-package com.fernando.iop.dto;
+package com.fernando.iop.security.dto;
 
 public record AuthResponseDTO(
         Long userID,

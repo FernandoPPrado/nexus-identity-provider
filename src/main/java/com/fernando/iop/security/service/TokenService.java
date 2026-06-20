@@ -6,6 +6,7 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.Instant;
 
 @Service
@@ -24,6 +25,11 @@ public class TokenService {
                 claim("email", userEntityResponseDTO.userEmail()).claim("roles", userEntityResponseDTO.userRoles()).build();
 
         return jwtEncoder.encode(JwtEncoderParameters.from(jwtClaimsSet)).getTokenValue();
+    }
+
+    public String recoveryToken() {
+        Long recoveryToken = new SecureRandom().nextLong(0, 1000000);
+        return String.format("%06d", recoveryToken);
     }
 
 }

@@ -1,6 +1,6 @@
 package com.fernando.iop.security.controller;
-import com.fernando.iop.dto.AuthRequestDTO;
-import com.fernando.iop.dto.AuthResponseDTO;
+import com.fernando.iop.security.dto.AuthRequestDTO;
+import com.fernando.iop.security.dto.AuthResponseDTO;
 import com.fernando.iop.security.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

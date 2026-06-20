@@ -5,6 +5,7 @@ import com.fernando.iop.user.enums.UserRoles;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -38,14 +39,46 @@ public class User {
     @JoinColumn(name = "project_id", nullable = false)
     private Project project;
 
+    @Column(nullable = false)
+    private boolean active;
+
+    private String recoveryToken;
+
+    private Instant recoveryTokenExpiry;
+
     public User(String userEmail, String userPassword, UserRoles userRoles, Project project) {
         this.userEmail = userEmail;
         this.userPassword = userPassword;
         this.userRoles = userRoles;
         this.project = project;
+        this.active = true;
     }
 
     public User() {
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public String getRecoveryToken() {
+        return recoveryToken;
+    }
+
+    public void setRecoveryToken(String recoveryToken) {
+        this.recoveryToken = recoveryToken;
+    }
+
+    public Instant getRecoveryTokenExpirity() {
+        return recoveryTokenExpiry;
+    }
+
+    public void setRecoveryTokenExpirity(Instant recoveryTokenExpirity) {
+        this.recoveryTokenExpiry = recoveryTokenExpirity;
     }
 
     public Long getUserId() {
