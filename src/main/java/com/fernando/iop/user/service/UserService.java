@@ -34,13 +34,22 @@ public class UserService {
     }
 
 
-    public UserEntityResponseDTO findUserByEmailAndProjectId(String email, Project project) {
+    public UserEntityResponseDTO findUserByEmailAndProjectIdAndActiveTrue(String email, Project project) {
+
+        if (email == null || email.isBlank() || project == null) {
+            throw new IllegalArgumentException("Valores nulos não suportados");
+        }
+
         User user = userH2Repository.findByUserEmailAndProject_ProjectIdAndActiveTrue(email, project.getProjectId()).orElseThrow(() -> new EntityNotFoundException("Entidade não encontrada"));
         return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles());
     }
 
 
-    public void createUser(String email, String password, Project project, UserRoles roles) {
+    public UserEntityResponseDTO createUser(String email, String password, Project project, UserRoles roles) {
+
+        if (email == null || email.isBlank() || password == null || password.isBlank() || project == null) {
+            throw new IllegalArgumentException("Valores nulos não suportados");
+        }
 
         if (!projectRepository.existsByProjectId(project.getProjectId())) {
             throw new EntityNotFoundException("Projeto não localizado");
@@ -50,11 +59,16 @@ public class UserService {
             throw new EntityExistsException("Usuário já cadastrado neste projeto");
         }
 
-        userH2Repository.save(new User(email, passwordEncoder.encode(password), UserRoles.ROLE_USER, project));
-
+        User user = userH2Repository.save(new User(email, passwordEncoder.encode(password), UserRoles.ROLE_USER, project));
+        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles());
     }
 
     public void softDeleteUser(String email, UUID projectid, boolean status) {
+
+        if (email == null || email.isBlank() || projectid == null) {
+            throw new IllegalArgumentException("Valores nulos não suportados");
+        }
+
         User user = userH2Repository.findByUserEmailAndProject_ProjectId(email, projectid).orElseThrow(() -> new EntityNotFoundException("Usuario nao localizado"));
         user.setActive(status);
         userH2Repository.save(user);
@@ -62,6 +76,10 @@ public class UserService {
 
 
     public void generateRecoveryToken(String email, UUID projectId) {
+
+        if (email == null || email.isBlank() || projectId == null) {
+            throw new IllegalArgumentException("Valores nulos não suportados");
+        }
 
         User user = userH2Repository.findByUserEmailAndProject_ProjectId(email, projectId).orElseThrow(() -> new EntityNotFoundException("Usuario nao localizado"));
 
@@ -76,6 +94,10 @@ public class UserService {
     }
 
     public UserEntityResponseDTO recoveryUser(String email, UUID projectId, String newPassword, String recoveryToken) {
+
+        if (email == null || email.isBlank() || projectId == null || newPassword == null || newPassword.isBlank() || recoveryToken == null || recoveryToken.isBlank()) {
+            throw new IllegalArgumentException("Valores nulos não suportados");
+        }
 
         User user = userH2Repository.findByUserEmailAndProject_ProjectId(email, projectId).orElseThrow(() -> new EntityNotFoundException("Usuario nao localizado"));
 
