@@ -18,10 +18,11 @@ replay_pid*
 .vscode/
 
 application.properties
-
+application-test.properties
 # Chaves Criptográficas Locais (Nunca comitar)
 /CHAVES/
 *.pem
 private.pem
 
 C:\Programacao\idp\nexus-identity-provider\src\main\java\com\fernando\iop\security\configuration\DatabaseSeeder.java
+DatabaseSeeder.java

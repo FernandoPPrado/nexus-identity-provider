@@ -1,0 +1,307 @@
+package com.fernando.iop.user;
+
+
+import com.fernando.iop.project.model.Project;
+import com.fernando.iop.user.dto.UserEntityResponseDTO;
+import com.fernando.iop.user.enums.UserRoles;
+import com.fernando.iop.user.model.User;
+import com.fernando.iop.user.repository.UserH2Repository;
+import com.fernando.iop.user.service.UserService;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.time.DateTimeException;
+import java.time.Instant;
+import java.util.UUID;
+
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional
+public class UserServiceTest {
+
+    @Autowired
+    public UserService userService;
+    @Autowired
+    public UserH2Repository userH2Repository;
+
+
+    @Nested
+    @DisplayName("1. Busca de Usuário (findUserByEmailAndProjectId)")
+    class FindUserTests {
+
+        @Test
+        @DisplayName("Caminho Feliz: Deve retornar usuario correto")
+        void loadUserByUsernameAndProjectNameAndActiveTrueDeveRetornarUsuario() {
+
+            UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
+
+            UserEntityResponseDTO user = userService.findUserByEmailAndProjectIdAndActiveTrue("admin.alpha@iop.com", new Project(uuid));
+            assertThat(user).isNotNull();
+            assertThat(user.userEmail()).isEqualTo("admin.alpha@iop.com");
+            assertThat(user.project().getProjectId()).isEqualTo(uuid);
+
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Deve retornar excessão se usuario estiver inativo")
+        void loadUserByUsernameAndProjectNameAndActiveTrueRetornaErroUsuarioInativo() {
+
+            UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
+            User user = new User("teste", "TestPassword", UserRoles.ROLE_USER, new Project(uuid));
+            user.setActive(false);
+            userH2Repository.save(user);
+
+            assertThatThrownBy(() -> {
+                userService.findUserByEmailAndProjectIdAndActiveTrue(user.getUserEmail(), user.getProject());
+            }).isInstanceOf(EntityNotFoundException.class);
+
+        }
+
+
+    }
+
+    @Nested
+    @DisplayName("2. Criacao de Usuario (createUser)")
+    class CreateUserTests {
+
+        @Test
+        @DisplayName("Caminho Feliz: Cria Usuario Corretamente")
+        void createUserDevePersistirCorretamente() {
+
+            UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
+
+            userService.createUser("teste", "TestPassword", new Project(uuid), UserRoles.ROLE_ADMIN);
+
+            User user1 = userH2Repository.findByUserEmailAndProject_ProjectId("teste", uuid).orElseThrow();
+
+            assertThat(user1).isNotNull();
+            assertThat(user1.getUserEmail()).isEqualTo("teste");
+            assertThat(user1.getUserRoles()).isEqualTo(UserRoles.ROLE_USER);
+            assertThat(user1.getProject().getProjectId()).isEqualTo(uuid);
+            assertThat(user1.getUserPassword()).isNotEqualTo("TestPassword");
+
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Projeto Inexistente")
+        void createUserDeveLancarExcessaoSeProjetoNaoExistir() {
+            UUID uuidInexistente = UUID.fromString("11111111-2222-3333-4444-555555555566");
+
+            assertThatThrownBy(() -> {
+                userService.createUser("teste", "TestPassword", new Project(uuidInexistente), UserRoles.ROLE_ADMIN);
+            }).isInstanceOf(EntityNotFoundException.class);
+
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Usuario ja Existente")
+        void createUserDeveLancarExcessaoSeUsuarioJaExistir() {
+            UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
+            userService.createUser("teste", "TestPassword", new Project(uuid), UserRoles.ROLE_ADMIN);
+
+            assertThatThrownBy(() -> {
+                userService.createUser("teste", "TestPassword", new Project(uuid), UserRoles.ROLE_ADMIN);
+            }).isInstanceOf(EntityExistsException.class);
+
+        }
+
+    }
+
+    @Nested
+    @DisplayName("3. SoftDelete de Usuario (softDeleteUser)")
+    class SoftDeleteUserTests {
+
+        @Test
+        @DisplayName("Caminho Feliz: Muda para usuario inativo corretamente")
+        void SoftDeleteDeveMudarUsuarioCorretoParaInativo() {
+            UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
+            UserEntityResponseDTO user = userService.createUser("teste", "TestPassword", new Project(uuid), UserRoles.ROLE_ADMIN);
+
+            userService.softDeleteUser(user.userEmail(), user.project().getProjectId(), false);
+
+            assertThatThrownBy(() -> {
+                userService.findUserByEmailAndProjectIdAndActiveTrue(user.userEmail(), user.project());
+            }).isInstanceOf(EntityNotFoundException.class);
+
+            User user1 = userH2Repository.findByUserEmailAndProject_ProjectId(user.userEmail(), user.project().getProjectId()).orElseThrow();
+
+            assertThat(user1.getUserEmail()).isEqualTo(user.userEmail());
+            assertThat(user1.isActive()).isFalse();
+
+
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Tenta mudar usuario nao cadastrado")
+        void SoftDeleteDeveLancarErroUsuarioNaoCadastrado() {
+
+            UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
+
+            assertThatThrownBy(() -> {
+                userService.softDeleteUser("Usuario Inxistente", uuid, false);
+            }).isInstanceOf(EntityNotFoundException.class);
+
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Tenta mudar usuario projeto Inexistente")
+        void SoftDeleteDeveLancarErroProjetoNaoCadastrado() {
+
+            UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
+            UserEntityResponseDTO user = userService.createUser("teste", "TestPassword", new Project(uuid), UserRoles.ROLE_ADMIN);
+
+            Boolean userConf = userH2Repository.existsByUserEmailAndProject_ProjectId("teste", uuid);
+
+            assertThat(userConf).isTrue();
+
+            assertThatThrownBy(() -> {
+                userService.softDeleteUser("teste", UUID.randomUUID(), false);
+            }).isInstanceOf(EntityNotFoundException.class);
+
+        }
+
+    }
+
+    @Nested
+    @DisplayName("4. Generate User Recovery Token (GenerateRecoveryToken)")
+    class GenerateRecoveryToken {
+        @Test
+        @DisplayName("Caminho Feliz: Deve gerar token de recuperação e expiração corretamente")
+        void generateRecoveryTokenDeveSalvarTokenETempoNoBanco() {
+
+            UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
+            UserEntityResponseDTO userDTO = userService.createUser("recupera@iop.com", "Senha123", new Project(uuid), UserRoles.ROLE_USER);
+
+            Instant now = Instant.now();
+
+            userService.generateRecoveryToken(userDTO.userEmail(), userDTO.project().getProjectId());
+
+            User userAlterado = userH2Repository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), userDTO.project().getProjectId()).orElseThrow();
+
+            assertThat(userAlterado.getRecoveryToken()).isNotNull().isNotBlank().isNotEmpty();
+            assertThat(userAlterado.getRecoveryTokenExpirity()).isAfter(now);
+
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Email inexistente")
+        void generateRecoveryTokenDeveLancarErroSeEmailNaoExistir() {
+            UUID uuidValido = UUID.fromString("11111111-2222-3333-4444-555555555555");
+
+            assertThatThrownBy(() -> {
+                userService.generateRecoveryToken("naoexiste@iop.com", uuidValido);
+            }).isInstanceOf(EntityNotFoundException.class)
+                    .hasMessageContaining("Usuario nao localizado");
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Email existe mas em projeto diferente")
+        void generateRecoveryTokenDeveLancarErroSeProjetoNaoBaterComUsuario() {
+            UUID projetoA = UUID.fromString("11111111-2222-3333-4444-555555555555");
+            UUID projetoB = UUID.randomUUID();
+
+            UserEntityResponseDTO user = userService.createUser("user.projetoA@iop.com", "Senha123", new Project(projetoA), UserRoles.ROLE_USER);
+
+            assertThatThrownBy(() -> {
+                userService.generateRecoveryToken(user.userEmail(), projetoB);
+            }).isInstanceOf(EntityNotFoundException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("5. Recuperação de Senha (recoveryUser)")
+    class RecoveryUserTests {
+
+        @Test
+        @DisplayName("Caminho Feliz: Deve recuperar senha e resetar tokens com sucesso")
+        void recoveryUserDeveRecuperarSenhaCorretamente() {
+            UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
+            UserEntityResponseDTO userDTO = userService.createUser("recupera@iop.com", "SenhaAntiga", new Project(uuid), UserRoles.ROLE_USER);
+
+
+            User user = userH2Repository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), uuid).orElseThrow();
+            user.setRecoveryToken("TOKEN_VALIDO_123");
+            user.setRecoveryTokenExpirity(Instant.now().plusSeconds(3600));
+            user.setActive(false);
+            userH2Repository.save(user);
+
+            UserEntityResponseDTO response = userService.recoveryUser(userDTO.userEmail(), uuid, "NovaSenhaForte", "TOKEN_VALIDO_123");
+
+            User userRecuperado = userH2Repository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), uuid).orElseThrow();
+
+            assertThat(response).isNotNull();
+            assertThat(userRecuperado.isActive()).isTrue();
+            assertThat(userRecuperado.getRecoveryToken()).isNull();
+            assertThat(userRecuperado.getRecoveryTokenExpirity()).isNull();
+            assertThat(userRecuperado.getUserPassword()).isNotEqualTo("SenhaAntiga");
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Deve lançar erro se os parâmetros forem nulos ou vazios")
+        void recoveryUserDeveLancarErroParaParametrosNulos() {
+            UUID uuid = UUID.randomUUID();
+
+            assertThatThrownBy(() -> {
+                userService.recoveryUser(null, uuid, "NovaSenha", "TOKEN");
+            }).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Valores nulos não suportados");
+
+            assertThatThrownBy(() -> {
+                userService.recoveryUser("email@iop.com", null, "NovaSenha", "TOKEN");
+            }).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Valores nulos não suportados");
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Deve lançar erro se usuário não existir")
+        void recoveryUserDeveLancarErroSeUsuarioNaoExistir() {
+            UUID uuid = UUID.randomUUID();
+
+            assertThatThrownBy(() -> {
+                userService.recoveryUser("naoexiste@iop.com", uuid, "NovaSenha", "TOKEN");
+            }).isInstanceOf(EntityNotFoundException.class).hasMessageContaining("Usuario nao localizado");
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Deve lançar erro se não houver pedido de recuperação ativo")
+        void recoveryUserDeveLancarErroSeNaoHouverTokenSalvo() {
+            UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
+            UserEntityResponseDTO userDTO = userService.createUser("semtoken@iop.com", "Senha123", new Project(uuid), UserRoles.ROLE_USER);
+
+            assertThatThrownBy(() -> {
+                userService.recoveryUser(userDTO.userEmail(), uuid, "NovaSenha", "TOKEN_QUALQUER");
+            }).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Nenhum pedido de recuperação ativo");
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Deve lançar erro se o token estiver expirado")
+        void recoveryUserDeveLancarErroSeTokenExpirado() {
+            UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
+            UserEntityResponseDTO userDTO = userService.createUser("expirado@iop.com", "Senha123", new Project(uuid), UserRoles.ROLE_USER);
+
+            // Preparando o cenário com token expirado (1 hora no passado)
+            User user = userH2Repository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), uuid).orElseThrow();
+            user.setRecoveryToken("TOKEN_VALIDO");
+            user.setRecoveryTokenExpirity(Instant.now().minusSeconds(3600));
+            userH2Repository.save(user);
+
+            assertThatThrownBy(() -> {
+                userService.recoveryUser(userDTO.userEmail(), uuid, "NovaSenha", "TOKEN_VALIDO");
+            }).isInstanceOf(DateTimeException.class).hasMessageContaining("Token Expirado");
+
+        }
+
+    }
+
+
+}
