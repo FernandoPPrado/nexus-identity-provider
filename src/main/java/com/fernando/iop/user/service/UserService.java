@@ -93,6 +93,7 @@ public class UserService {
         System.out.println("AQUI ENVIAMOS O EVENTO PARA O RABBIT");
     }
 
+    @Transactional
     public UserEntityResponseDTO recoveryUser(String email, UUID projectId, String newPassword, String recoveryToken) {
 
         if (email == null || email.isBlank() || projectId == null || newPassword == null || newPassword.isBlank() || recoveryToken == null || recoveryToken.isBlank()) {
