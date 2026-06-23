@@ -1,7 +1,6 @@
 package com.fernando.iop.user.controller;
 
-import com.fernando.iop.security.service.TokenService;
-import com.fernando.iop.user.dto.UserConfirmTokenDTO;
+import com.fernando.iop.user.dto.UserConfirmTokenRequestDTO;
 import com.fernando.iop.user.dto.UserEntityResponseDTO;
 import com.fernando.iop.user.dto.UserRecoveryConfirmRequestDTO;
 import com.fernando.iop.user.dto.UserRequestDTO;
@@ -16,7 +15,7 @@ public class UserController {
     private final UserService userService;
 
 
-    public UserController(TokenService tokenService, UserService userService) {
+    public UserController(UserService userService) {
         this.userService = userService;
     }
 
@@ -39,7 +38,7 @@ public class UserController {
     }
 
     @PostMapping(path = "/confirm-validate")
-    public ResponseEntity<UserEntityResponseDTO> validadeConfirmUser(@RequestBody UserConfirmTokenDTO userConfirmDTO) {
+    public ResponseEntity<UserEntityResponseDTO> validadeConfirmUser(@RequestBody UserConfirmTokenRequestDTO userConfirmDTO) {
         UserEntityResponseDTO user = userService.confirmUser(userConfirmDTO.userEmail(), userConfirmDTO.projectId(), userConfirmDTO.confirmToken());
         return ResponseEntity.ok().body(user);
     }

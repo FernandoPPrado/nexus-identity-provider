@@ -7,7 +7,7 @@ import com.fernando.iop.security.dto.AuthResponseDTO;
 import com.fernando.iop.security.service.AuthService;
 import com.fernando.iop.user.enums.UserRoles;
 import com.fernando.iop.user.model.User;
-import com.fernando.iop.user.repository.UserH2Repository;
+import com.fernando.iop.user.repository.UserRepository;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
@@ -35,7 +35,7 @@ public class AuthServiceTest {
     AuthService authService;
 
     @Autowired
-    private UserH2Repository userH2Repository;
+    private UserRepository userRepository;
 
     @Autowired
     private ProjectRepository projectRepository;
@@ -55,7 +55,7 @@ public class AuthServiceTest {
 
             User user = new User("login@iop.com", passwordEncoder.encode("SenhaForte123"), UserRoles.ROLE_USER, new Project(projectId));
             user.setActive(true);
-            userH2Repository.save(user);
+            userRepository.save(user);
 
             AuthRequestDTO request = new AuthRequestDTO("login@iop.com", "SenhaForte123", projectId);
 
@@ -85,7 +85,7 @@ public class AuthServiceTest {
 
             User user = new User("senhaerrada@iop.com", passwordEncoder.encode("SenhaCorreta123"), UserRoles.ROLE_USER, new Project(projectId));
             user.setActive(true);
-            userH2Repository.save(user);
+            userRepository.save(user);
 
             AuthRequestDTO request = new AuthRequestDTO("senhaerrada@iop.com", "SenhaIncorreta", projectId);
 
@@ -115,7 +115,7 @@ public class AuthServiceTest {
             assertThat(response.jwt()).isNotBlank();
 
 
-            User savedUser = userH2Repository.findByUserEmailAndProject_ProjectId("novo@iop.com", projectId).orElseThrow();
+            User savedUser = userRepository.findByUserEmailAndProject_ProjectId("novo@iop.com", projectId).orElseThrow();
             assertThat(savedUser).isNotNull();
             assertThat(savedUser.getUserRoles()).isEqualTo(UserRoles.ROLE_USER);
         }
@@ -126,7 +126,7 @@ public class AuthServiceTest {
             UUID projectId = UUID.fromString("11111111-2222-3333-4444-555555555555");
 
             User user = new User("existente@iop.com", passwordEncoder.encode("Senha123"), UserRoles.ROLE_USER, new Project(projectId));
-            userH2Repository.save(user);
+            userRepository.save(user);
 
             AuthRequestDTO request = new AuthRequestDTO("existente@iop.com", "Senha123", projectId);
 

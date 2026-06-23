@@ -5,7 +5,7 @@ import com.fernando.iop.project.model.Project;
 import com.fernando.iop.user.dto.UserEntityResponseDTO;
 import com.fernando.iop.user.enums.UserRoles;
 import com.fernando.iop.user.model.User;
-import com.fernando.iop.user.repository.UserH2Repository;
+import com.fernando.iop.user.repository.UserRepository;
 import com.fernando.iop.user.service.UserService;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
@@ -15,9 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.Assert;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,7 +32,7 @@ public class UserServiceTest {
     @Autowired
     private UserService userService;
     @Autowired
-    private UserH2Repository userH2Repository;
+    private UserRepository userRepository;
 
     String emailPrincipal = "admin.alpha@iop.com";
     UUID projectIdPrincipal = UUID.fromString("11111111-2222-3333-4444-555555555555");
@@ -63,7 +61,7 @@ public class UserServiceTest {
             UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
             User user = new User("teste", "TestPassword", UserRoles.ROLE_USER, new Project(uuid));
             user.setActive(false);
-            userH2Repository.save(user);
+            userRepository.save(user);
 
             assertThatThrownBy(() -> {
                 userService.findUserByEmailAndProjectIdAndActiveTrue(user.getUserEmail(), user.getProject());
@@ -86,7 +84,7 @@ public class UserServiceTest {
 
             userService.createUser("teste", "TestPassword", new Project(uuid), UserRoles.ROLE_ADMIN);
 
-            User user1 = userH2Repository.findByUserEmailAndProject_ProjectId("teste", uuid).orElseThrow();
+            User user1 = userRepository.findByUserEmailAndProject_ProjectId("teste", uuid).orElseThrow();
 
             assertThat(user1).isNotNull();
             assertThat(user1.getUserEmail()).isEqualTo("teste");
@@ -137,7 +135,7 @@ public class UserServiceTest {
                 userService.findUserByEmailAndProjectIdAndActiveTrue(user.userEmail(), user.project());
             }).isInstanceOf(EntityNotFoundException.class);
 
-            User user1 = userH2Repository.findByUserEmailAndProject_ProjectId(user.userEmail(), user.project().getProjectId()).orElseThrow();
+            User user1 = userRepository.findByUserEmailAndProject_ProjectId(user.userEmail(), user.project().getProjectId()).orElseThrow();
 
             assertThat(user1.getUserEmail()).isEqualTo(user.userEmail());
             assertThat(user1.isActive()).isFalse();
@@ -164,7 +162,7 @@ public class UserServiceTest {
             UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
             UserEntityResponseDTO user = userService.createUser("teste", "TestPassword", new Project(uuid), UserRoles.ROLE_ADMIN);
 
-            Boolean userConf = userH2Repository.existsByUserEmailAndProject_ProjectId("teste", uuid);
+            Boolean userConf = userRepository.existsByUserEmailAndProject_ProjectId("teste", uuid);
 
             assertThat(userConf).isTrue();
 
@@ -190,7 +188,7 @@ public class UserServiceTest {
 
             userService.generateRecoveryToken(userDTO.userEmail(), userDTO.project().getProjectId());
 
-            User userAlterado = userH2Repository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), userDTO.project().getProjectId()).orElseThrow();
+            User userAlterado = userRepository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), userDTO.project().getProjectId()).orElseThrow();
 
             assertThat(userAlterado.getRecoveryToken()).isNotNull().isNotBlank().isNotEmpty();
             assertThat(userAlterado.getRecoveryTokenExpirity()).isAfter(now);
@@ -233,15 +231,15 @@ public class UserServiceTest {
             UserEntityResponseDTO userDTO = userService.createUser("recupera@iop.com", "SenhaAntiga", new Project(uuid), UserRoles.ROLE_USER);
 
 
-            User user = userH2Repository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), uuid).orElseThrow();
+            User user = userRepository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), uuid).orElseThrow();
             user.setRecoveryToken("TOKEN_VALIDO_123");
             user.setRecoveryTokenExpirity(Instant.now().plusSeconds(3600));
             user.setActive(false);
-            userH2Repository.save(user);
+            userRepository.save(user);
 
             UserEntityResponseDTO response = userService.recoveryUser(userDTO.userEmail(), uuid, "NovaSenhaForte", "TOKEN_VALIDO_123");
 
-            User userRecuperado = userH2Repository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), uuid).orElseThrow();
+            User userRecuperado = userRepository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), uuid).orElseThrow();
 
             assertThat(response).isNotNull();
             assertThat(userRecuperado.isActive()).isTrue();
@@ -292,10 +290,10 @@ public class UserServiceTest {
             UserEntityResponseDTO userDTO = userService.createUser("expirado@iop.com", "Senha123", new Project(uuid), UserRoles.ROLE_USER);
 
             // Preparando o cenário com token expirado (1 hora no passado)
-            User user = userH2Repository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), uuid).orElseThrow();
+            User user = userRepository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), uuid).orElseThrow();
             user.setRecoveryToken("TOKEN_VALIDO");
             user.setRecoveryTokenExpirity(Instant.now().minusSeconds(3600));
-            userH2Repository.save(user);
+            userRepository.save(user);
 
             assertThatThrownBy(() -> {
                 userService.recoveryUser(userDTO.userEmail(), uuid, "NovaSenha", "TOKEN_VALIDO");
@@ -316,7 +314,7 @@ public class UserServiceTest {
             UUID projectId = UUID.fromString("11111111-2222-3333-4444-555555555555");
             userService.generateConfirmUserCode("admin.alpha@iop.com", projectId);
 
-            User updatedUser = userH2Repository.findByUserEmailAndProject_ProjectId("admin.alpha@iop.com", projectId).orElseThrow();
+            User updatedUser = userRepository.findByUserEmailAndProject_ProjectId("admin.alpha@iop.com", projectId).orElseThrow();
 
             assertThat(updatedUser.getConfirmToken()).isNotNull();
             assertThat(updatedUser.getConfirmTokenExpiry()).isNotNull();
@@ -342,9 +340,9 @@ public class UserServiceTest {
         @Test
         @DisplayName("Caminho Triste: Deve lançar IllegalStateException se usuário já estiver confirmado")
         void deveLancarExcecaoSeUsuarioJaConfirmado() {
-            User user = userH2Repository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
+            User user = userRepository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
             user.setConfirmed(true);
-            userH2Repository.save(user);
+            userRepository.save(user);
 
 
             assertThatThrownBy(() -> userService.generateConfirmUserCode(emailPrincipal, projectIdPrincipal))
@@ -360,15 +358,15 @@ public class UserServiceTest {
         @Test
         @DisplayName("Caminho Feliz: Deve confirmar usuário e limpar tokens com sucesso")
         void deveConfirmarUsuarioComSucesso() {
-            User user = userH2Repository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
+            User user = userRepository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
             user.setConfirmed(false);
             user.setConfirmToken("token-valido-123");
             user.setConfirmTokenExpiry(Instant.now().plusSeconds(3600));
-            userH2Repository.save(user);
+            userRepository.save(user);
 
             UserEntityResponseDTO response = userService.confirmUser(emailPrincipal, projectIdPrincipal, "token-valido-123");
 
-            User updatedUser = userH2Repository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
+            User updatedUser = userRepository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
 
             assertThat(updatedUser.isConfirmed()).isTrue();
             assertThat(updatedUser.getConfirmToken()).isNull();
@@ -382,11 +380,11 @@ public class UserServiceTest {
         @DisplayName("Caminho Triste: Deve lançar exceção se não houver processo de confirmação em aberto")
         void deveLancarExcecaoSeNenhumProcessoAberto() {
 
-            User user = userH2Repository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
+            User user = userRepository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
             user.setConfirmed(false);
             user.setConfirmToken(null);
             user.setConfirmTokenExpiry(null);
-            userH2Repository.save(user);
+            userRepository.save(user);
 
             assertThatThrownBy(() -> userService.confirmUser(emailPrincipal, projectIdPrincipal, "qualquer-token"))
                     .isInstanceOf(IllegalStateException.class)
@@ -397,11 +395,11 @@ public class UserServiceTest {
         @DisplayName("Caminho Triste: Deve lançar exceção se token for inválido ou estiver expirado")
         void deveLancarExcecaoSeTokenInvalidoOuExpirado() {
 
-            User user = userH2Repository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
+            User user = userRepository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
             user.setConfirmed(false);
             user.setConfirmToken("token-expirado-123");
             user.setConfirmTokenExpiry(Instant.now().minusSeconds(10)); // Expirado
-            userH2Repository.save(user);
+            userRepository.save(user);
 
             assertThatThrownBy(() -> userService.confirmUser(emailPrincipal, projectIdPrincipal, "token-expirado-123"))
                     .isInstanceOf(IllegalStateException.class)
