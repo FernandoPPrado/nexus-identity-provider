@@ -24,12 +24,15 @@ public class AuthService {
     private final UserH2Repository userH2Repository;
     private final TokenService tokenService;
     private final ProjectRepository projectRepository;
+    private final UserService userService;
 
-    public AuthService(PasswordEncoder bCrypt, UserH2Repository userH2Repository, TokenService tokenService, ProjectRepository projectRepository) {
+
+    public AuthService(PasswordEncoder bCrypt, UserH2Repository userH2Repository, TokenService tokenService, ProjectRepository projectRepository, UserService userService) {
         this.bCrypt = bCrypt;
         this.userH2Repository = userH2Repository;
         this.tokenService = tokenService;
         this.projectRepository = projectRepository;
+        this.userService = userService;
     }
 
 
@@ -53,9 +56,9 @@ public class AuthService {
         if (!projectRepository.existsByProjectId(authRequestDTO.projectId())) {
             throw new EntityNotFoundException("Projeto nao localizado");
         }
-        User user = new User(authRequestDTO.email(), bCrypt.encode(authRequestDTO.password()), UserRoles.ROLE_USER, new Project(authRequestDTO.projectId()));
-        userH2Repository.save(user);
-        return new AuthResponseDTO(user.getUserId(), user.getUserEmail(), tokenService.generateToken(new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles())));
+
+        UserEntityResponseDTO userEntityResponseDTO = userService.createUser(authRequestDTO.email(), authRequestDTO.password(), new Project(authRequestDTO.projectId()), UserRoles.ROLE_USER);
+        return new AuthResponseDTO(userEntityResponseDTO.userId(), userEntityResponseDTO.userEmail(), tokenService.generateToken(userEntityResponseDTO));
 
     }
 

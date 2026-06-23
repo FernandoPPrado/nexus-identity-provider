@@ -12,6 +12,7 @@ import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -75,6 +76,7 @@ public class UserService {
     }
 
 
+    @Transactional
     public void generateRecoveryToken(String email, UUID projectId) {
 
         if (email == null || email.isBlank() || projectId == null) {
@@ -90,7 +92,7 @@ public class UserService {
         user.setRecoveryTokenExpirity(instant);
 
         userH2Repository.save(user);
-
+        System.out.println("AQUI ENVIAMOS O EVENTO PARA O RABBIT");
     }
 
     public UserEntityResponseDTO recoveryUser(String email, UUID projectId, String newPassword, String recoveryToken) {
@@ -120,5 +122,59 @@ public class UserService {
         return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles());
 
     }
+
+
+    @Transactional
+    public void generateConfirmUserCode(String userEmail, UUID projectId) {
+
+        if (userEmail == null || userEmail.isBlank() || projectId == null) {
+            throw new IllegalArgumentException("Valores nulos não suportados");
+        }
+
+        User user = userH2Repository.findByUserEmailAndProject_ProjectId(userEmail, projectId).orElseThrow(() -> new EntityNotFoundException("Usuario nao localizado"));
+        if (user.isConfirmed()) {
+            //TO-DO Adicionar excessao correta
+            throw new IllegalStateException("Usuário já confirmado");
+        }
+        String token = tokenService.recoveryToken();
+        Instant confirmTokenExp = Instant.now().plusSeconds(3600);
+        user.setConfirmToken(token);
+        user.setConfirmTokenExpiry(confirmTokenExp);
+        userH2Repository.save(user);
+
+        System.out.println("AQUI ENVIAMOS O EVENTO PARA O RABBIT");
+
+    }
+
+    @Transactional
+    public UserEntityResponseDTO confirmUser(String userEmail, UUID projectId, String confirmationCode) {
+
+        if (userEmail == null || userEmail.isBlank() || projectId == null || confirmationCode == null || confirmationCode.isBlank()) {
+            throw new IllegalArgumentException("Valores nulos não suportados");
+        }
+
+        User user = userH2Repository.findByUserEmailAndProject_ProjectId(userEmail, projectId).orElseThrow(() -> new EntityNotFoundException("Usuario nao localizado"));
+
+        if (user.isConfirmed()) {
+            throw new IllegalStateException("Usuário já confirmado");
+        }
+
+        if (user.getConfirmToken() == null || user.getConfirmTokenExpiry() == null) {
+            throw new IllegalStateException("Nenhum processo de confirmacao em aberto");
+        }
+
+        if (!user.getConfirmToken().equals(confirmationCode) || !user.getConfirmTokenExpiry().isAfter(Instant.now())) {
+            throw new IllegalStateException("Token inválido ou expirado");
+        }
+        user.setConfirmed(true);
+        user.setConfirmTokenExpiry(null);
+        user.setConfirmToken(null);
+        userH2Repository.save(user);
+
+        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles());
+
+    }
+
+
 
 }

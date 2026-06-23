@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Entity
 @Table(name = "user_table",
@@ -46,12 +45,20 @@ public class User {
 
     private Instant recoveryTokenExpiry;
 
+    @Column(nullable = false)
+    private boolean confirmed;
+
+    private String confirmToken;
+
+    private Instant confirmTokenExpiry;
+
     public User(String userEmail, String userPassword, UserRoles userRoles, Project project) {
         this.userEmail = userEmail;
         this.userPassword = userPassword;
         this.userRoles = userRoles;
         this.project = project;
         this.active = true;
+        this.confirmed = false;
     }
 
     public User() {
@@ -67,6 +74,38 @@ public class User {
 
     public String getRecoveryToken() {
         return recoveryToken;
+    }
+
+    public boolean isConfirmed() {
+        return confirmed;
+    }
+
+    public void setConfirmed(boolean confirmed) {
+        this.confirmed = confirmed;
+    }
+
+    public Instant getRecoveryTokenExpiry() {
+        return recoveryTokenExpiry;
+    }
+
+    public void setRecoveryTokenExpiry(Instant recoveryTokenExpiry) {
+        this.recoveryTokenExpiry = recoveryTokenExpiry;
+    }
+
+    public Instant getConfirmTokenExpiry() {
+        return confirmTokenExpiry;
+    }
+
+    public void setConfirmTokenExpiry(Instant confirmTokenExpiry) {
+        this.confirmTokenExpiry = confirmTokenExpiry;
+    }
+
+    public String getConfirmToken() {
+        return confirmToken;
+    }
+
+    public void setConfirmToken(String confirmToken) {
+        this.confirmToken = confirmToken;
     }
 
     public void setRecoveryToken(String recoveryToken) {
