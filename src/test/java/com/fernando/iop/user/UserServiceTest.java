@@ -32,10 +32,12 @@ import java.util.UUID;
 public class UserServiceTest {
 
     @Autowired
-    public UserService userService;
+    private UserService userService;
     @Autowired
-    public UserH2Repository userH2Repository;
+    private UserH2Repository userH2Repository;
 
+    String emailPrincipal = "admin.alpha@iop.com";
+    UUID projectIdPrincipal = UUID.fromString("11111111-2222-3333-4444-555555555555");
 
     @Nested
     @DisplayName("1. Busca de Usuário (findUserByEmailAndProjectId)")
@@ -301,6 +303,114 @@ public class UserServiceTest {
 
         }
 
+    }
+
+
+    @Nested
+    @DisplayName("6. Gerar Confirm Token (generateRecoveryToken)")
+    class GenerateConfirmUserCode {
+        @Test
+        @DisplayName("Caminho Feliz: Deve gerar Confirm token e salvar no banco corretamente")
+        void deveGerarTokenSalvarNoBancoCorretamente() {
+
+            UUID projectId = UUID.fromString("11111111-2222-3333-4444-555555555555");
+            userService.generateConfirmUserCode("admin.alpha@iop.com", projectId);
+
+            User updatedUser = userH2Repository.findByUserEmailAndProject_ProjectId("admin.alpha@iop.com", projectId).orElseThrow();
+
+            assertThat(updatedUser.getConfirmToken()).isNotNull();
+            assertThat(updatedUser.getConfirmTokenExpiry()).isNotNull();
+            assertThat(updatedUser.getConfirmTokenExpiry().isAfter(Instant.now())).isTrue();
+
+
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Deve lançar exceção se e-mail ou projeto forem nulos/vazios")
+        void deveLancarExcecaoParaValoresNulos() {
+            UUID projectId = UUID.fromString("11111111-2222-3333-4444-555555555555");
+            assertThatThrownBy(() -> userService.generateConfirmUserCode(null, projectId))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Valores nulos não suportados");
+
+
+            assertThatThrownBy(() -> userService.generateConfirmUserCode(emailPrincipal, null))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Valores nulos não suportados");
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Deve lançar IllegalStateException se usuário já estiver confirmado")
+        void deveLancarExcecaoSeUsuarioJaConfirmado() {
+            User user = userH2Repository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
+            user.setConfirmed(true);
+            userH2Repository.save(user);
+
+
+            assertThatThrownBy(() -> userService.generateConfirmUserCode(emailPrincipal, projectIdPrincipal))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("Usuário já confirmado");
+        }
+    }
+
+    @Nested
+    @DisplayName("2. Confirmar Usuário (confirmUser)")
+    class ConfirmUser {
+
+        @Test
+        @DisplayName("Caminho Feliz: Deve confirmar usuário e limpar tokens com sucesso")
+        void deveConfirmarUsuarioComSucesso() {
+            User user = userH2Repository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
+            user.setConfirmed(false);
+            user.setConfirmToken("token-valido-123");
+            user.setConfirmTokenExpiry(Instant.now().plusSeconds(3600));
+            userH2Repository.save(user);
+
+            UserEntityResponseDTO response = userService.confirmUser(emailPrincipal, projectIdPrincipal, "token-valido-123");
+
+            User updatedUser = userH2Repository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
+
+            assertThat(updatedUser.isConfirmed()).isTrue();
+            assertThat(updatedUser.getConfirmToken()).isNull();
+            assertThat(updatedUser.getConfirmTokenExpiry()).isNull();
+
+            assertThat(response).isNotNull();
+            assertThat(response.userEmail()).isEqualTo(emailPrincipal);
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Deve lançar exceção se não houver processo de confirmação em aberto")
+        void deveLancarExcecaoSeNenhumProcessoAberto() {
+
+            User user = userH2Repository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
+            user.setConfirmed(false);
+            user.setConfirmToken(null);
+            user.setConfirmTokenExpiry(null);
+            userH2Repository.save(user);
+
+            assertThatThrownBy(() -> userService.confirmUser(emailPrincipal, projectIdPrincipal, "qualquer-token"))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("Nenhum processo de confirmacao em aberto");
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Deve lançar exceção se token for inválido ou estiver expirado")
+        void deveLancarExcecaoSeTokenInvalidoOuExpirado() {
+
+            User user = userH2Repository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
+            user.setConfirmed(false);
+            user.setConfirmToken("token-expirado-123");
+            user.setConfirmTokenExpiry(Instant.now().minusSeconds(10)); // Expirado
+            userH2Repository.save(user);
+
+            assertThatThrownBy(() -> userService.confirmUser(emailPrincipal, projectIdPrincipal, "token-expirado-123"))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("Token inválido ou expirado");
+
+            assertThatThrownBy(() -> userService.confirmUser(emailPrincipal, projectIdPrincipal, "TOKEN-COMPLETAMENTE-ERRADO"))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("Token inválido ou expirado");
+        }
     }
 
 
