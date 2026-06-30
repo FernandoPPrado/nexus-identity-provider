@@ -33,13 +33,13 @@ public class UserService {
     }
 
 
-    public UserEntityResponseDTO findUserByEmailAndProjectIdAndActiveTrue(String email, Project project) {
+    public UserEntityResponseDTO findUserByEmailAndProjectIdAndActiveTrueAndConfirmed(String email, Project project) {
 
         if (email == null || email.isBlank() || project == null) {
             throw new IllegalArgumentException("Valores nulos não suportados");
         }
 
-        User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrue(email, project.getProjectId()).orElseThrow(() -> new EntityNotFoundException("Entidade não encontrada"));
+        User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(email, project.getProjectId()).orElseThrow(() -> new EntityNotFoundException("Entidade não encontrada"));
         return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles());
     }
 
@@ -142,6 +142,7 @@ public class UserService {
         userRepository.save(user);
 
         System.out.println("AQUI ENVIAMOS O EVENTO PARA O RABBIT");
+        System.out.println(user.getConfirmToken());
 
     }
 
@@ -173,7 +174,6 @@ public class UserService {
         return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles());
 
     }
-
 
 
 }
