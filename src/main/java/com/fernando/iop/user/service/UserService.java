@@ -78,7 +78,7 @@ public class UserService {
     public void generateRecoveryToken(String email, UUID projectId) {
 
         if (email == null || email.isBlank() || projectId == null) {
-            throw new IllegalArgumentException("Valores nulos não suportados");
+            return;
         }
 
         User user = userRepository.findByUserEmailAndProject_ProjectId(email, projectId).orElseThrow(() -> new EntityNotFoundException("Usuario nao localizado"));

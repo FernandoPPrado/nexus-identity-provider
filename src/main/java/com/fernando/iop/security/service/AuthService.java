@@ -36,9 +36,10 @@ public class AuthService {
 
     public AuthResponseDTO userLogin(AuthRequestDTO authRequestDTO) {
 
-        User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(authRequestDTO.email(), authRequestDTO.projectId()).orElseThrow(() -> new EntityNotFoundException("Entidade nao localizada"));
+        User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(authRequestDTO.email(), authRequestDTO.projectId()).orElseThrow(()
+                -> new BadCredentialsException("E-mail ou senha incorretos"));
         if (!bCrypt.matches(authRequestDTO.password(), user.getUserPassword())) {
-            throw new BadCredentialsException("Credenciais incorretas");
+            throw new BadCredentialsException("E-mail ou senha incorretos");
         } else {
             return new AuthResponseDTO(user.getUserId(), user.getUserEmail(), tokenService.generateToken(new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles())));
         }
