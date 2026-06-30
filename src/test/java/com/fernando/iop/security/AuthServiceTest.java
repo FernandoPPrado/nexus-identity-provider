@@ -55,6 +55,7 @@ public class AuthServiceTest {
 
             User user = new User("login@iop.com", passwordEncoder.encode("SenhaForte123"), UserRoles.ROLE_USER, new Project(projectId));
             user.setActive(true);
+            user.setConfirmed(true);
             userRepository.save(user);
 
             AuthRequestDTO request = new AuthRequestDTO("login@iop.com", "SenhaForte123", projectId);
@@ -85,6 +86,7 @@ public class AuthServiceTest {
 
             User user = new User("senhaerrada@iop.com", passwordEncoder.encode("SenhaCorreta123"), UserRoles.ROLE_USER, new Project(projectId));
             user.setActive(true);
+            user.setConfirmed(true);
             userRepository.save(user);
 
             AuthRequestDTO request = new AuthRequestDTO("senhaerrada@iop.com", "SenhaIncorreta", projectId);
