@@ -47,7 +47,11 @@ public class UserServiceTest {
 
             UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
 
-            UserEntityResponseDTO user = userService.findUserByEmailAndProjectIdAndActiveTrue("admin.alpha@iop.com", new Project(uuid));
+            User user1 = userRepository.findByUserEmailAndProject_ProjectId("admin.alpha@iop.com", uuid).orElseThrow();
+            user1.setConfirmed(true);
+            userRepository.save(user1);
+
+            UserEntityResponseDTO user = userService.findUserByEmailAndProjectIdAndActiveTrueAndConfirmed("admin.alpha@iop.com", new Project(uuid));
             assertThat(user).isNotNull();
             assertThat(user.userEmail()).isEqualTo("admin.alpha@iop.com");
             assertThat(user.project().getProjectId()).isEqualTo(uuid);
@@ -64,7 +68,7 @@ public class UserServiceTest {
             userRepository.save(user);
 
             assertThatThrownBy(() -> {
-                userService.findUserByEmailAndProjectIdAndActiveTrue(user.getUserEmail(), user.getProject());
+                userService.findUserByEmailAndProjectIdAndActiveTrueAndConfirmed(user.getUserEmail(), user.getProject());
             }).isInstanceOf(EntityNotFoundException.class);
 
         }
@@ -132,7 +136,7 @@ public class UserServiceTest {
             userService.softDeleteUser(user.userEmail(), user.project().getProjectId(), false);
 
             assertThatThrownBy(() -> {
-                userService.findUserByEmailAndProjectIdAndActiveTrue(user.userEmail(), user.project());
+                userService.findUserByEmailAndProjectIdAndActiveTrueAndConfirmed(user.userEmail(), user.project());
             }).isInstanceOf(EntityNotFoundException.class);
 
             User user1 = userRepository.findByUserEmailAndProject_ProjectId(user.userEmail(), user.project().getProjectId()).orElseThrow();
