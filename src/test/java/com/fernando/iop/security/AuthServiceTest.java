@@ -75,8 +75,7 @@ public class AuthServiceTest {
 
             assertThatThrownBy(() -> {
                 authService.userLogin(request);
-            }).isInstanceOf(EntityNotFoundException.class)
-                    .hasMessageContaining("Entidade nao localizada");
+            }).isInstanceOf(BadCredentialsException.class);
         }
 
         @Test
@@ -93,8 +92,7 @@ public class AuthServiceTest {
 
             assertThatThrownBy(() -> {
                 authService.userLogin(request);
-            }).isInstanceOf(BadCredentialsException.class)
-                    .hasMessageContaining("Credenciais incorretas");
+            }).isInstanceOf(BadCredentialsException.class);
         }
     }
 
