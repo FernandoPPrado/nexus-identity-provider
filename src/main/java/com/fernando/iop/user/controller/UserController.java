@@ -1,9 +1,6 @@
 package com.fernando.iop.user.controller;
 
-import com.fernando.iop.user.dto.UserConfirmTokenRequestDTO;
-import com.fernando.iop.user.dto.UserEntityResponseDTO;
-import com.fernando.iop.user.dto.UserRecoveryConfirmRequestDTO;
-import com.fernando.iop.user.dto.UserRequestDTO;
+import com.fernando.iop.user.dto.*;
 import com.fernando.iop.user.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
-
 
     public UserController(UserService userService) {
         this.userService = userService;
