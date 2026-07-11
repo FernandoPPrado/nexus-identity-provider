@@ -21,7 +21,7 @@ public class RabbitService {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public void dispararEvento(EmailEventDTO emailEventDTO) {
+    public void dispararEmailEvento(EmailEventDTO emailEventDTO) {
         rabbitTemplate.convertAndSend(exchangeName, routEmail, emailEventDTO);
     }
 }
