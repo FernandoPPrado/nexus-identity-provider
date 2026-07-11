@@ -195,7 +195,7 @@ public class UserServiceTest {
             User userAlterado = userRepository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), userDTO.project().getProjectId()).orElseThrow();
 
             assertThat(userAlterado.getRecoveryToken()).isNotNull().isNotBlank().isNotEmpty();
-            assertThat(userAlterado.getRecoveryTokenExpirity()).isAfter(now);
+            assertThat(userAlterado.getRecoveryTokenExpiry()).isAfter(now);
 
         }
 
@@ -237,7 +237,7 @@ public class UserServiceTest {
 
             User user = userRepository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), uuid).orElseThrow();
             user.setRecoveryToken("TOKEN_VALIDO_123");
-            user.setRecoveryTokenExpirity(Instant.now().plusSeconds(3600));
+            user.setRecoveryTokenExpiry(Instant.now().plusSeconds(3600));
             user.setActive(false);
             userRepository.save(user);
 
@@ -248,7 +248,7 @@ public class UserServiceTest {
             assertThat(response).isNotNull();
             assertThat(userRecuperado.isActive()).isTrue();
             assertThat(userRecuperado.getRecoveryToken()).isNull();
-            assertThat(userRecuperado.getRecoveryTokenExpirity()).isNull();
+            assertThat(userRecuperado.getRecoveryTokenExpiry()).isNull();
             assertThat(userRecuperado.getUserPassword()).isNotEqualTo("SenhaAntiga");
         }
 
@@ -296,7 +296,7 @@ public class UserServiceTest {
             // Preparando o cenário com token expirado (1 hora no passado)
             User user = userRepository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), uuid).orElseThrow();
             user.setRecoveryToken("TOKEN_VALIDO");
-            user.setRecoveryTokenExpirity(Instant.now().minusSeconds(3600));
+            user.setRecoveryTokenExpiry(Instant.now().minusSeconds(3600));
             userRepository.save(user);
 
             assertThatThrownBy(() -> {
