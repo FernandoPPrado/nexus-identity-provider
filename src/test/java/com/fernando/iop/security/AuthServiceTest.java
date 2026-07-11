@@ -5,6 +5,7 @@ import com.fernando.iop.project.repository.ProjectRepository;
 import com.fernando.iop.security.dto.AuthRequestDTO;
 import com.fernando.iop.security.dto.AuthResponseDTO;
 import com.fernando.iop.security.service.AuthService;
+import com.fernando.iop.user.dto.UserEntityResponseDTO;
 import com.fernando.iop.user.enums.UserRoles;
 import com.fernando.iop.user.model.User;
 import com.fernando.iop.user.repository.UserRepository;
@@ -101,23 +102,23 @@ public class AuthServiceTest {
     class CreateUserTests {
 
         @Test
-        @DisplayName("Caminho Feliz: Deve criar usuário e retornar token")
-        void createUserDeveSalvarNoBancoERetornarToken() {
+        @DisplayName("Caminho Feliz: Deve criar usuário com sucesso e sem autenticar direto")
+        void createUserDeveSalvarNoBancoERetornarDadosDoUsuario() {
 
             UUID projectId = UUID.fromString("11111111-2222-3333-4444-555555555555");
             AuthRequestDTO request = new AuthRequestDTO("novo@iop.com", "Senha123", projectId);
 
-            AuthResponseDTO response = authService.createUser(request);
+            UserEntityResponseDTO response = authService.createUser(request);
 
-            // Validação do Retorno
             assertThat(response).isNotNull();
-            assertThat(response.email()).isEqualTo("novo@iop.com");
-            assertThat(response.jwt()).isNotBlank();
-
+            assertThat(response.userEmail()).isEqualTo("novo@iop.com");
+            assertThat(response.userId()).isNotNull();
 
             User savedUser = userRepository.findByUserEmailAndProject_ProjectId("novo@iop.com", projectId).orElseThrow();
             assertThat(savedUser).isNotNull();
             assertThat(savedUser.getUserRoles()).isEqualTo(UserRoles.ROLE_USER);
+
+            assertThat(savedUser.isConfirmed()).isFalse();
         }
 
         @Test
