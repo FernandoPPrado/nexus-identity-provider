@@ -1,8 +1,10 @@
 package com.fernando.iop.user.service;
 
+import com.fernando.iop.message.service.RabbitService;
 import com.fernando.iop.project.model.Project;
 import com.fernando.iop.project.repository.ProjectRepository;
 import com.fernando.iop.security.service.TokenService;
+import com.fernando.iop.user.dto.EmailEventDTO;
 import com.fernando.iop.user.dto.UserEntityResponseDTO;
 import com.fernando.iop.user.enums.UserRoles;
 import com.fernando.iop.user.model.User;
@@ -25,11 +27,14 @@ public class UserService {
     private final ProjectRepository projectRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserService(TokenService tokenService, UserRepository userRepository, ProjectRepository projectRepository, PasswordEncoder passwordEncoder) {
+    private final RabbitService rabbitService;
+
+    public UserService(TokenService tokenService, UserRepository userRepository, ProjectRepository projectRepository, PasswordEncoder passwordEncoder, RabbitService rabbitService) {
         this.tokenService = tokenService;
         this.userRepository = userRepository;
         this.projectRepository = projectRepository;
         this.passwordEncoder = passwordEncoder;
+        this.rabbitService = rabbitService;
     }
 
 
@@ -83,14 +88,19 @@ public class UserService {
 
         User user = userRepository.findByUserEmailAndProject_ProjectId(email, projectId).orElseThrow(() -> new EntityNotFoundException("Usuario nao localizado"));
 
+        if (user.getRecoveryToken() != null && user.getRecoveryTokenExpiry().isAfter(Instant.now())) {
+            throw new IllegalStateException("Verifique seu email");
+        }
+
         String recoveryToken = tokenService.recoveryToken();
         Instant instant = Instant.now().plusSeconds(3600);
 
         user.setRecoveryToken(recoveryToken);
-        user.setRecoveryTokenExpirity(instant);
+        user.setRecoveryTokenExpiry(instant);
 
-        userRepository.save(user);
-        System.out.println("AQUI ENVIAMOS O EVENTO PARA O RABBIT");
+        User user1 = userRepository.save(user);
+        System.out.println(user1.getRecoveryToken());
+        rabbitService.dispararEmailEvento(new EmailEventDTO(user1.getUserEmail(), user1.getProject().getProjectId(), user.getRecoveryToken(), EmailEventDTO.TipoEvento.RECUPERACAO));
     }
 
     @Transactional
@@ -102,10 +112,11 @@ public class UserService {
 
         User user = userRepository.findByUserEmailAndProject_ProjectId(email, projectId).orElseThrow(() -> new EntityNotFoundException("Usuario nao localizado"));
 
-        if (user.getRecoveryToken() == null || user.getRecoveryTokenExpirity() == null) {
+        if (user.getRecoveryToken() == null || user.getRecoveryTokenExpiry() == null) {
             throw new IllegalArgumentException("Nenhum pedido de recuperação ativo para esta conta.");
         }
-        if (user.getRecoveryTokenExpirity().isBefore(Instant.now())) {
+
+        if (user.getRecoveryTokenExpiry().isBefore(Instant.now())) {
             throw new DateTimeException("Token Expirado");
         }
 
@@ -114,7 +125,7 @@ public class UserService {
         }
 
         user.setActive(true);
-        user.setRecoveryTokenExpirity(null);
+        user.setRecoveryTokenExpiry(null);
         user.setRecoveryToken(null);
         user.setUserPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
@@ -131,15 +142,24 @@ public class UserService {
         }
 
         User user = userRepository.findByUserEmailAndProject_ProjectId(userEmail, projectId).orElseThrow(() -> new EntityNotFoundException("Usuario nao localizado"));
+
         if (user.isConfirmed()) {
             //TO-DO Adicionar excessao correta
             throw new IllegalStateException("Usuário já confirmado");
         }
+
+        if (user.getConfirmToken() != null && user.getConfirmTokenExpiry().isAfter(Instant.now())) {
+            throw new IllegalStateException("Verifique seu email");
+        }
+
         String token = tokenService.recoveryToken();
         Instant confirmTokenExp = Instant.now().plusSeconds(3600);
         user.setConfirmToken(token);
         user.setConfirmTokenExpiry(confirmTokenExp);
-        userRepository.save(user);
+        User user1 = userRepository.save(user);
+
+        System.out.println(user1.getRecoveryToken());
+        rabbitService.dispararEmailEvento(new EmailEventDTO(user1.getUserEmail(), user1.getProject().getProjectId(), user.getRecoveryToken(), EmailEventDTO.TipoEvento.CONFIRMACAO));
 
         System.out.println("AQUI ENVIAMOS O EVENTO PARA O RABBIT");
         System.out.println(user.getConfirmToken());
