@@ -112,14 +112,6 @@ public class User {
         this.recoveryToken = recoveryToken;
     }
 
-    public Instant getRecoveryTokenExpirity() {
-        return recoveryTokenExpiry;
-    }
-
-    public void setRecoveryTokenExpirity(Instant recoveryTokenExpirity) {
-        this.recoveryTokenExpiry = recoveryTokenExpirity;
-    }
-
     public Long getUserId() {
         return userId;
     }
