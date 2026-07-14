@@ -1,10 +1,12 @@
 package com.fernando.iop.security;
 
+import com.fernando.iop.message.service.RabbitService;
 import com.fernando.iop.project.model.Project;
 import com.fernando.iop.project.repository.ProjectRepository;
 import com.fernando.iop.security.dto.AuthRequestDTO;
 import com.fernando.iop.security.dto.AuthResponseDTO;
 import com.fernando.iop.security.service.AuthService;
+import com.fernando.iop.user.dto.UserEntityResponseDTO;
 import com.fernando.iop.user.enums.UserRoles;
 import com.fernando.iop.user.model.User;
 import com.fernando.iop.user.repository.UserRepository;
@@ -18,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -100,24 +103,27 @@ public class AuthServiceTest {
     @DisplayName("2. Criação de Usuário no Auth (createUser)")
     class CreateUserTests {
 
+        @MockitoBean
+        private RabbitService rabbitService;
+
         @Test
-        @DisplayName("Caminho Feliz: Deve criar usuário e retornar token")
-        void createUserDeveSalvarNoBancoERetornarToken() {
+        @DisplayName("Caminho Feliz: Deve criar usuário com sucesso e sem autenticar direto")
+        void createUserDeveSalvarNoBancoERetornarDadosDoUsuario() {
 
             UUID projectId = UUID.fromString("11111111-2222-3333-4444-555555555555");
             AuthRequestDTO request = new AuthRequestDTO("novo@iop.com", "Senha123", projectId);
 
-            AuthResponseDTO response = authService.createUser(request);
+            UserEntityResponseDTO response = authService.createUser(request);
 
-            // Validação do Retorno
             assertThat(response).isNotNull();
-            assertThat(response.email()).isEqualTo("novo@iop.com");
-            assertThat(response.jwt()).isNotBlank();
-
+            assertThat(response.userEmail()).isEqualTo("novo@iop.com");
+            assertThat(response.userId()).isNotNull();
 
             User savedUser = userRepository.findByUserEmailAndProject_ProjectId("novo@iop.com", projectId).orElseThrow();
             assertThat(savedUser).isNotNull();
             assertThat(savedUser.getUserRoles()).isEqualTo(UserRoles.ROLE_USER);
+
+            assertThat(savedUser.isConfirmed()).isFalse();
         }
 
         @Test

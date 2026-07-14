@@ -46,7 +46,7 @@ public class AuthService {
 
     }
 
-    public AuthResponseDTO createUser(AuthRequestDTO authRequestDTO) {
+    public UserEntityResponseDTO createUser(AuthRequestDTO authRequestDTO) {
 
         if (userRepository.existsByUserEmailAndProject_ProjectId(authRequestDTO.email(), authRequestDTO.projectId())) {
             throw new EntityExistsException("Usuario já cadastrado");
@@ -56,8 +56,8 @@ public class AuthService {
             throw new EntityNotFoundException("Projeto nao localizado");
         }
 
-        UserEntityResponseDTO userEntityResponseDTO = userService.createUser(authRequestDTO.email(), authRequestDTO.password(), new Project(authRequestDTO.projectId()), UserRoles.ROLE_USER);
-        return new AuthResponseDTO(userEntityResponseDTO.userId(), userEntityResponseDTO.userEmail(), tokenService.generateToken(userEntityResponseDTO));
+        return userService.createUser(authRequestDTO.email(), authRequestDTO.password(), new Project(authRequestDTO.projectId()), UserRoles.ROLE_USER);
+
 
     }
 

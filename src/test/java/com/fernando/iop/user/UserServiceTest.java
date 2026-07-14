@@ -1,6 +1,7 @@
 package com.fernando.iop.user;
 
 
+import com.fernando.iop.message.service.RabbitService;
 import com.fernando.iop.project.model.Project;
 import com.fernando.iop.user.dto.UserEntityResponseDTO;
 import com.fernando.iop.user.enums.UserRoles;
@@ -13,8 +14,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,6 +37,10 @@ public class UserServiceTest {
     private UserService userService;
     @Autowired
     private UserRepository userRepository;
+
+    @MockitoBean
+    private RabbitService rabbitService;
+
 
     String emailPrincipal = "admin.alpha@iop.com";
     UUID projectIdPrincipal = UUID.fromString("11111111-2222-3333-4444-555555555555");
