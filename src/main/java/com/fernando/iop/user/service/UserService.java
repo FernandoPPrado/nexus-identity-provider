@@ -159,7 +159,7 @@ public class UserService {
         User user1 = userRepository.save(user);
 
         System.out.println(user1.getRecoveryToken());
-        rabbitService.dispararEmailEvento(new EmailEventDTO(user1.getUserEmail(), user1.getProject().getProjectId(), user.getRecoveryToken(), EmailEventDTO.TipoEvento.CONFIRMACAO));
+        rabbitService.dispararEmailEvento(new EmailEventDTO(user1.getUserEmail(), user1.getProject().getProjectId(), user.getConfirmToken(), EmailEventDTO.TipoEvento.CONFIRMACAO));
 
         System.out.println("AQUI ENVIAMOS O EVENTO PARA O RABBIT");
         System.out.println(user.getConfirmToken());
