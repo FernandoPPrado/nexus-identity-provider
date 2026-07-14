@@ -1,5 +1,6 @@
 package com.fernando.iop.security;
 
+import com.fernando.iop.message.service.RabbitService;
 import com.fernando.iop.project.model.Project;
 import com.fernando.iop.project.repository.ProjectRepository;
 import com.fernando.iop.security.dto.AuthRequestDTO;
@@ -19,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -100,6 +102,9 @@ public class AuthServiceTest {
     @Nested
     @DisplayName("2. Criação de Usuário no Auth (createUser)")
     class CreateUserTests {
+
+        @MockitoBean
+        private RabbitService rabbitService;
 
         @Test
         @DisplayName("Caminho Feliz: Deve criar usuário com sucesso e sem autenticar direto")
