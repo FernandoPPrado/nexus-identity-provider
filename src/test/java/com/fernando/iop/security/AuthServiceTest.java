@@ -1,5 +1,9 @@
 package com.fernando.iop.security;
 
+import com.fernando.iop.exceptions.InvalidCredentialsException;
+import com.fernando.iop.exceptions.ProjectNotFoundException;
+import com.fernando.iop.exceptions.UserAlreadyExistsException;
+import com.fernando.iop.exceptions.UserNotFoundException;
 import com.fernando.iop.message.service.RabbitService;
 import com.fernando.iop.project.model.Project;
 import com.fernando.iop.project.repository.ProjectRepository;
@@ -78,7 +82,7 @@ public class AuthServiceTest {
 
             assertThatThrownBy(() -> {
                 authService.userLogin(request);
-            }).isInstanceOf(BadCredentialsException.class);
+            }).isInstanceOf(UserNotFoundException.class);
         }
 
         @Test
@@ -95,7 +99,7 @@ public class AuthServiceTest {
 
             assertThatThrownBy(() -> {
                 authService.userLogin(request);
-            }).isInstanceOf(BadCredentialsException.class);
+            }).isInstanceOf(InvalidCredentialsException.class);
         }
     }
 
@@ -138,7 +142,7 @@ public class AuthServiceTest {
 
             assertThatThrownBy(() -> {
                 authService.createUser(request);
-            }).isInstanceOf(EntityExistsException.class)
+            }).isInstanceOf(UserAlreadyExistsException.class)
                     .hasMessageContaining("Usuario já cadastrado");
         }
 
@@ -150,7 +154,7 @@ public class AuthServiceTest {
 
             assertThatThrownBy(() -> {
                 authService.createUser(request);
-            }).isInstanceOf(EntityNotFoundException.class)
+            }).isInstanceOf(ProjectNotFoundException.class)
                     .hasMessageContaining("Projeto nao localizado");
         }
     }

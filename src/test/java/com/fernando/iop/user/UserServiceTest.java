@@ -1,6 +1,7 @@
 package com.fernando.iop.user;
 
 
+import com.fernando.iop.exceptions.*;
 import com.fernando.iop.message.service.RabbitService;
 import com.fernando.iop.project.model.Project;
 import com.fernando.iop.user.dto.UserEntityResponseDTO;
@@ -77,7 +78,7 @@ public class UserServiceTest {
 
             assertThatThrownBy(() -> {
                 userService.findUserByEmailAndProjectIdAndActiveTrueAndConfirmed(user.getUserEmail(), user.getProject());
-            }).isInstanceOf(EntityNotFoundException.class);
+            }).isInstanceOf(UserNotFoundException.class);
 
         }
 
@@ -113,7 +114,7 @@ public class UserServiceTest {
 
             assertThatThrownBy(() -> {
                 userService.createUser("teste", "TestPassword", new Project(uuidInexistente), UserRoles.ROLE_ADMIN);
-            }).isInstanceOf(EntityNotFoundException.class);
+            }).isInstanceOf(ProjectNotFoundException.class);
 
         }
 
@@ -125,7 +126,7 @@ public class UserServiceTest {
 
             assertThatThrownBy(() -> {
                 userService.createUser("teste", "TestPassword", new Project(uuid), UserRoles.ROLE_ADMIN);
-            }).isInstanceOf(EntityExistsException.class);
+            }).isInstanceOf(UserAlreadyExistsException.class);
 
         }
 
@@ -145,7 +146,7 @@ public class UserServiceTest {
 
             assertThatThrownBy(() -> {
                 userService.findUserByEmailAndProjectIdAndActiveTrueAndConfirmed(user.userEmail(), user.project());
-            }).isInstanceOf(EntityNotFoundException.class);
+            }).isInstanceOf(UserNotFoundException.class);
 
             User user1 = userRepository.findByUserEmailAndProject_ProjectId(user.userEmail(), user.project().getProjectId()).orElseThrow();
 
@@ -163,7 +164,7 @@ public class UserServiceTest {
 
             assertThatThrownBy(() -> {
                 userService.softDeleteUser("Usuario Inxistente", uuid, false);
-            }).isInstanceOf(EntityNotFoundException.class);
+            }).isInstanceOf(UserNotFoundException.class);
 
         }
 
@@ -180,7 +181,7 @@ public class UserServiceTest {
 
             assertThatThrownBy(() -> {
                 userService.softDeleteUser("teste", UUID.randomUUID(), false);
-            }).isInstanceOf(EntityNotFoundException.class);
+            }).isInstanceOf(UserNotFoundException.class);
 
         }
 
@@ -214,7 +215,7 @@ public class UserServiceTest {
 
             assertThatThrownBy(() -> {
                 userService.generateRecoveryToken("naoexiste@iop.com", uuidValido);
-            }).isInstanceOf(EntityNotFoundException.class)
+            }).isInstanceOf(UserNotFoundException.class)
                     .hasMessageContaining("Usuario nao localizado");
         }
 
@@ -228,7 +229,7 @@ public class UserServiceTest {
 
             assertThatThrownBy(() -> {
                 userService.generateRecoveryToken(user.userEmail(), projetoB);
-            }).isInstanceOf(EntityNotFoundException.class);
+            }).isInstanceOf(UserNotFoundException.class);
         }
     }
 
@@ -261,6 +262,25 @@ public class UserServiceTest {
         }
 
         @Test
+        @DisplayName("Caminho Triste: Deve lançar erro se já houver pedido de recuperação ativo")
+        void generateRecoveryTokenDeveLancarErroSeTokenJaAtivo() {
+            UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
+            UserEntityResponseDTO userDTO = userService.createUser("spamrecupera@iop.com", "Senha123", new Project(uuid), UserRoles.ROLE_USER);
+
+            // Simulando que o usuário já pediu o token há 5 minutos e ele ainda é válido
+            User user = userRepository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), uuid).orElseThrow();
+            user.setRecoveryToken("TOKEN_JA_ENVIADO");
+            user.setRecoveryTokenExpiry(Instant.now().plusSeconds(3600));
+            userRepository.save(user);
+
+            // Tentando pedir de novo antes de expirar
+            assertThatThrownBy(() -> {
+                userService.generateRecoveryToken(userDTO.userEmail(), uuid);
+            }).isInstanceOf(TokenAlreadySentException.class)
+                    .hasMessageContaining("Pedido de recuperacao ativo");
+        }
+
+        @Test
         @DisplayName("Caminho Triste: Deve lançar erro se os parâmetros forem nulos ou vazios")
         void recoveryUserDeveLancarErroParaParametrosNulos() {
             UUID uuid = UUID.randomUUID();
@@ -281,7 +301,7 @@ public class UserServiceTest {
 
             assertThatThrownBy(() -> {
                 userService.recoveryUser("naoexiste@iop.com", uuid, "NovaSenha", "TOKEN");
-            }).isInstanceOf(EntityNotFoundException.class).hasMessageContaining("Usuario nao localizado");
+            }).isInstanceOf(UserNotFoundException.class).hasMessageContaining("Usuario nao localizado");
         }
 
         @Test
@@ -292,7 +312,7 @@ public class UserServiceTest {
 
             assertThatThrownBy(() -> {
                 userService.recoveryUser(userDTO.userEmail(), uuid, "NovaSenha", "TOKEN_QUALQUER");
-            }).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Nenhum pedido de recuperação ativo");
+            }).isInstanceOf(InvalidTokenException.class).hasMessageContaining("Nenhum pedido de recuperação ativo");
         }
 
         @Test
@@ -309,7 +329,7 @@ public class UserServiceTest {
 
             assertThatThrownBy(() -> {
                 userService.recoveryUser(userDTO.userEmail(), uuid, "NovaSenha", "TOKEN_VALIDO");
-            }).isInstanceOf(DateTimeException.class).hasMessageContaining("Token Expirado");
+            }).isInstanceOf(InvalidTokenException.class).hasMessageContaining("Token Expirado");
 
         }
 
@@ -335,6 +355,27 @@ public class UserServiceTest {
 
         }
 
+
+        @Test
+        @DisplayName("Caminho Triste: Deve lançar erro se já houver pedido de confirmação ativo")
+        void deveLancarExcecaoSePedidoConfirmacaoJaAtivo() {
+            UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
+            UserEntityResponseDTO userDTO = userService.createUser("spamconfirma@iop.com", "Senha123", new Project(uuid), UserRoles.ROLE_USER);
+
+            // Simulando que o sistema já gerou o token de confirmação e enviou o e-mail
+            User user = userRepository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), uuid).orElseThrow();
+            user.setConfirmed(false);
+            user.setConfirmToken("TOKEN_CONFIRMACAO_ATIVO");
+            user.setConfirmTokenExpiry(Instant.now().plusSeconds(3600));
+            userRepository.save(user);
+
+            // Tentando clicar no botão de "reenviar código" antes do tempo
+            assertThatThrownBy(() -> {
+                userService.generateConfirmUserCode(userDTO.userEmail(), uuid);
+            }).isInstanceOf(TokenAlreadySentException.class)
+                    .hasMessageContaining("Pedido de confirmaçao ativo");
+        }
+
         @Test
         @DisplayName("Caminho Triste: Deve lançar exceção se e-mail ou projeto forem nulos/vazios")
         void deveLancarExcecaoParaValoresNulos() {
@@ -350,7 +391,7 @@ public class UserServiceTest {
         }
 
         @Test
-        @DisplayName("Caminho Triste: Deve lançar IllegalStateException se usuário já estiver confirmado")
+        @DisplayName("Caminho Triste: Deve lançar UserAlreadyConfirmedException se usuário já estiver confirmado")
         void deveLancarExcecaoSeUsuarioJaConfirmado() {
             User user = userRepository.findByUserEmailAndProject_ProjectId(emailPrincipal, projectIdPrincipal).orElseThrow();
             user.setConfirmed(true);
@@ -358,7 +399,7 @@ public class UserServiceTest {
 
 
             assertThatThrownBy(() -> userService.generateConfirmUserCode(emailPrincipal, projectIdPrincipal))
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(UserAlreadyConfirmedException.class)
                     .hasMessage("Usuário já confirmado");
         }
     }
@@ -399,7 +440,7 @@ public class UserServiceTest {
             userRepository.save(user);
 
             assertThatThrownBy(() -> userService.confirmUser(emailPrincipal, projectIdPrincipal, "qualquer-token"))
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(InvalidTokenException.class)
                     .hasMessage("Nenhum processo de confirmacao em aberto");
         }
 
@@ -414,11 +455,11 @@ public class UserServiceTest {
             userRepository.save(user);
 
             assertThatThrownBy(() -> userService.confirmUser(emailPrincipal, projectIdPrincipal, "token-expirado-123"))
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(InvalidTokenException.class)
                     .hasMessage("Token inválido ou expirado");
 
             assertThatThrownBy(() -> userService.confirmUser(emailPrincipal, projectIdPrincipal, "TOKEN-COMPLETAMENTE-ERRADO"))
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(InvalidTokenException.class)
                     .hasMessage("Token inválido ou expirado");
         }
     }
