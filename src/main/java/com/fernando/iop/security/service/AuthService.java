@@ -1,5 +1,9 @@
 package com.fernando.iop.security.service;
 
+import com.fernando.iop.exceptions.InvalidCredentialsException;
+import com.fernando.iop.exceptions.ProjectNotFoundException;
+import com.fernando.iop.exceptions.UserAlreadyExistsException;
+import com.fernando.iop.exceptions.UserNotFoundException;
 import com.fernando.iop.security.dto.AuthRequestDTO;
 import com.fernando.iop.security.dto.AuthResponseDTO;
 import com.fernando.iop.project.model.Project;
@@ -37,9 +41,9 @@ public class AuthService {
     public AuthResponseDTO userLogin(AuthRequestDTO authRequestDTO) {
 
         User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(authRequestDTO.email(), authRequestDTO.projectId()).orElseThrow(()
-                -> new BadCredentialsException("E-mail ou senha incorretos"));
+                -> new UserNotFoundException("Usuario nao localizado"));
         if (!bCrypt.matches(authRequestDTO.password(), user.getUserPassword())) {
-            throw new BadCredentialsException("E-mail ou senha incorretos");
+            throw new InvalidCredentialsException("Senha Incorreta");
         } else {
             return new AuthResponseDTO(user.getUserId(), user.getUserEmail(), tokenService.generateToken(new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles())));
         }
@@ -49,11 +53,11 @@ public class AuthService {
     public UserEntityResponseDTO createUser(AuthRequestDTO authRequestDTO) {
 
         if (userRepository.existsByUserEmailAndProject_ProjectId(authRequestDTO.email(), authRequestDTO.projectId())) {
-            throw new EntityExistsException("Usuario já cadastrado");
+            throw new UserAlreadyExistsException("Usuario já cadastrado");
         }
 
         if (!projectRepository.existsByProjectId(authRequestDTO.projectId())) {
-            throw new EntityNotFoundException("Projeto nao localizado");
+            throw new ProjectNotFoundException("Projeto nao localizado");
         }
 
         return userService.createUser(authRequestDTO.email(), authRequestDTO.password(), new Project(authRequestDTO.projectId()), UserRoles.ROLE_USER);
