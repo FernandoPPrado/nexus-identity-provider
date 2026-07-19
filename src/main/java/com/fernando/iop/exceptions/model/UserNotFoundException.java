@@ -1,4 +1,4 @@
-package com.fernando.iop.exceptions;
+package com.fernando.iop.exceptions.model;
 
 public class UserNotFoundException extends RuntimeException {
 
