@@ -1,9 +1,9 @@
 package com.fernando.iop.security;
 
-import com.fernando.iop.exceptions.InvalidCredentialsException;
-import com.fernando.iop.exceptions.ProjectNotFoundException;
-import com.fernando.iop.exceptions.UserAlreadyExistsException;
-import com.fernando.iop.exceptions.UserNotFoundException;
+import com.fernando.iop.exceptions.model.InvalidCredentialsException;
+import com.fernando.iop.exceptions.model.ProjectNotFoundException;
+import com.fernando.iop.exceptions.model.UserAlreadyExistsException;
+import com.fernando.iop.exceptions.model.UserNotFoundException;
 import com.fernando.iop.message.service.RabbitService;
 import com.fernando.iop.project.model.Project;
 import com.fernando.iop.project.repository.ProjectRepository;
@@ -14,14 +14,11 @@ import com.fernando.iop.user.dto.UserEntityResponseDTO;
 import com.fernando.iop.user.enums.UserRoles;
 import com.fernando.iop.user.model.User;
 import com.fernando.iop.user.repository.UserRepository;
-import jakarta.persistence.EntityExistsException;
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;

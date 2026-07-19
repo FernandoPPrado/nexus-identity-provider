@@ -1,9 +1,9 @@
 package com.fernando.iop.security.service;
 
-import com.fernando.iop.exceptions.InvalidCredentialsException;
-import com.fernando.iop.exceptions.ProjectNotFoundException;
-import com.fernando.iop.exceptions.UserAlreadyExistsException;
-import com.fernando.iop.exceptions.UserNotFoundException;
+import com.fernando.iop.exceptions.model.InvalidCredentialsException;
+import com.fernando.iop.exceptions.model.ProjectNotFoundException;
+import com.fernando.iop.exceptions.model.UserAlreadyExistsException;
+import com.fernando.iop.exceptions.model.UserNotFoundException;
 import com.fernando.iop.security.dto.AuthRequestDTO;
 import com.fernando.iop.security.dto.AuthResponseDTO;
 import com.fernando.iop.project.model.Project;
@@ -13,9 +13,6 @@ import com.fernando.iop.user.enums.UserRoles;
 import com.fernando.iop.user.model.User;
 import com.fernando.iop.user.repository.UserRepository;
 import com.fernando.iop.user.service.UserService;
-import jakarta.persistence.EntityExistsException;
-import jakarta.persistence.EntityNotFoundException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
