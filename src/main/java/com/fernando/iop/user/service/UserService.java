@@ -1,5 +1,6 @@
 package com.fernando.iop.user.service;
 
+import com.fernando.iop.exceptions.model.*;
 import com.fernando.iop.message.service.RabbitService;
 import com.fernando.iop.project.model.Project;
 import com.fernando.iop.project.repository.ProjectRepository;
@@ -9,13 +10,10 @@ import com.fernando.iop.user.dto.UserEntityResponseDTO;
 import com.fernando.iop.user.enums.UserRoles;
 import com.fernando.iop.user.model.User;
 import com.fernando.iop.user.repository.UserRepository;
-import jakarta.persistence.EntityExistsException;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DateTimeException;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -44,7 +42,7 @@ public class UserService {
             throw new IllegalArgumentException("Valores nulos não suportados");
         }
 
-        User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(email, project.getProjectId()).orElseThrow(() -> new EntityNotFoundException("Entidade não encontrada"));
+        User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(email, project.getProjectId()).orElseThrow(() -> new UserNotFoundException("Entidade não encontrada"));
         return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles());
     }
 
@@ -56,11 +54,11 @@ public class UserService {
         }
 
         if (!projectRepository.existsByProjectId(project.getProjectId())) {
-            throw new EntityNotFoundException("Projeto não localizado");
+            throw new ProjectNotFoundException("Projeto não localizado");
         }
 
         if (userRepository.existsByUserEmailAndProject_ProjectId(email, project.getProjectId())) {
-            throw new EntityExistsException("Usuário já cadastrado neste projeto");
+            throw new UserAlreadyExistsException("Usuário já cadastrado neste projeto");
         }
 
         User user = userRepository.save(new User(email, passwordEncoder.encode(password), UserRoles.ROLE_USER, project));
@@ -73,7 +71,7 @@ public class UserService {
             throw new IllegalArgumentException("Valores nulos não suportados");
         }
 
-        User user = userRepository.findByUserEmailAndProject_ProjectId(email, projectid).orElseThrow(() -> new EntityNotFoundException("Usuario nao localizado"));
+        User user = userRepository.findByUserEmailAndProject_ProjectId(email, projectid).orElseThrow(() -> new UserNotFoundException("Usuario nao localizado"));
         user.setActive(status);
         userRepository.save(user);
     }
@@ -86,10 +84,10 @@ public class UserService {
             return;
         }
 
-        User user = userRepository.findByUserEmailAndProject_ProjectId(email, projectId).orElseThrow(() -> new EntityNotFoundException("Usuario nao localizado"));
+        User user = userRepository.findByUserEmailAndProject_ProjectId(email, projectId).orElseThrow(() -> new UserNotFoundException("Usuario nao localizado"));
 
         if (user.getRecoveryToken() != null && user.getRecoveryTokenExpiry().isAfter(Instant.now())) {
-            throw new IllegalStateException("Verifique seu email");
+            throw new TokenAlreadySentException("Pedido de recuperacao ativo");
         }
 
         String recoveryToken = tokenService.recoveryToken();
@@ -110,18 +108,18 @@ public class UserService {
             throw new IllegalArgumentException("Valores nulos não suportados");
         }
 
-        User user = userRepository.findByUserEmailAndProject_ProjectId(email, projectId).orElseThrow(() -> new EntityNotFoundException("Usuario nao localizado"));
+        User user = userRepository.findByUserEmailAndProject_ProjectId(email, projectId).orElseThrow(() -> new UserNotFoundException("Usuario nao localizado"));
 
         if (user.getRecoveryToken() == null || user.getRecoveryTokenExpiry() == null) {
-            throw new IllegalArgumentException("Nenhum pedido de recuperação ativo para esta conta.");
+            throw new InvalidTokenException("Nenhum pedido de recuperação ativo para esta conta.");
         }
 
         if (user.getRecoveryTokenExpiry().isBefore(Instant.now())) {
-            throw new DateTimeException("Token Expirado");
+            throw new InvalidTokenException("Token Expirado");
         }
 
         if (!user.getRecoveryToken().equals(recoveryToken)) {
-            throw new IllegalArgumentException("Token Invalido");
+            throw new InvalidTokenException("Token Invalido");
         }
 
         user.setActive(true);
@@ -141,15 +139,14 @@ public class UserService {
             throw new IllegalArgumentException("Valores nulos não suportados");
         }
 
-        User user = userRepository.findByUserEmailAndProject_ProjectId(userEmail, projectId).orElseThrow(() -> new EntityNotFoundException("Usuario nao localizado"));
+        User user = userRepository.findByUserEmailAndProject_ProjectId(userEmail, projectId).orElseThrow(() -> new UserNotFoundException("Usuario nao localizado"));
 
         if (user.isConfirmed()) {
-            //TO-DO Adicionar excessao correta
-            throw new IllegalStateException("Usuário já confirmado");
+            throw new UserAlreadyConfirmedException("Usuário já confirmado");
         }
 
         if (user.getConfirmToken() != null && user.getConfirmTokenExpiry().isAfter(Instant.now())) {
-            throw new IllegalStateException("Verifique seu email");
+            throw new TokenAlreadySentException("Pedido de confirmaçao ativo");
         }
 
         String token = tokenService.recoveryToken();
@@ -173,18 +170,18 @@ public class UserService {
             throw new IllegalArgumentException("Valores nulos não suportados");
         }
 
-        User user = userRepository.findByUserEmailAndProject_ProjectId(userEmail, projectId).orElseThrow(() -> new EntityNotFoundException("Usuario nao localizado"));
+        User user = userRepository.findByUserEmailAndProject_ProjectId(userEmail, projectId).orElseThrow(() -> new UserNotFoundException("Usuario nao localizado"));
 
         if (user.isConfirmed()) {
-            throw new IllegalStateException("Usuário já confirmado");
+            throw new UserAlreadyConfirmedException("Usuário já confirmado");
         }
 
         if (user.getConfirmToken() == null || user.getConfirmTokenExpiry() == null) {
-            throw new IllegalStateException("Nenhum processo de confirmacao em aberto");
+            throw new InvalidTokenException("Nenhum processo de confirmacao em aberto");
         }
 
         if (!user.getConfirmToken().equals(confirmationCode) || !user.getConfirmTokenExpiry().isAfter(Instant.now())) {
-            throw new IllegalStateException("Token inválido ou expirado");
+            throw new InvalidTokenException("Token inválido ou expirado");
         }
         user.setConfirmed(true);
         user.setConfirmTokenExpiry(null);
