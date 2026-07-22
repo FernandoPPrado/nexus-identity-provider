@@ -47,7 +47,7 @@ public class AuthService {
             throw new InvalidCredentialsException("Senha Incorreta");
         } else {
             log.info("Login realizado para usuario: {}", authRequestDTO.email());
-            return new AuthResponseDTO(user.getUserId(), user.getUserEmail(), tokenService.generateToken(new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles())));
+            return new AuthResponseDTO(user.getUserId(), user.getUserEmail(), tokenService.generateToken(new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles())));
         }
 
     }

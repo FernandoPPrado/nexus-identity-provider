@@ -46,7 +46,7 @@ public class UserService {
         }
         User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(email, project.getProjectId()).orElseThrow(() -> new UserNotFoundException("Entidade não encontrada"));
         log.info("Usuario e projeto localizados: {} {}", user.getUserEmail(), user.getProject().getProjectId());
-        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles());
+        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles());
     }
 
 
@@ -70,7 +70,7 @@ public class UserService {
 
         log.info("Usuario criado com sucesso: {} {}", user.getUserEmail(), user.getProject().getProjectId());
 
-        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles());
+        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles());
     }
 
     public void softDeleteUser(String email, UUID projectid, boolean status) {
@@ -145,7 +145,7 @@ public class UserService {
         user.setUserPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         log.info("Recuperacao bem sucedida {} {}", user.getUserEmail(), user.getProject().getProjectId());
-        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles());
+        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles());
 
     }
 
@@ -209,7 +209,7 @@ public class UserService {
         user.setConfirmToken(null);
         userRepository.save(user);
         log.info("Usuario confirmado {} {}", user.getUserEmail(), user.getProject().getProjectId());
-        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles());
+        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles());
 
     }
 
