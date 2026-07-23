@@ -10,6 +10,8 @@ import com.fernando.iop.user.dto.UserEntityResponseDTO;
 import com.fernando.iop.user.enums.UserRoles;
 import com.fernando.iop.user.model.User;
 import com.fernando.iop.user.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +21,7 @@ import java.util.UUID;
 
 @Service
 public class UserService {
-
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
     private final TokenService tokenService;
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
@@ -36,11 +38,14 @@ public class UserService {
     }
 
 
-    public UserEntityResponseDTO findUserByEmailAndProjectIdAndActiveTrueAndConfirmed(String email, UUID project) {
+    public UserEntityResponseDTO findUserByEmailAndProjectIdAndActiveTrueAndConfirmed(String email, Project project) {
+        log.info("Iniciando busca de usuario: Email: {} e Project: {}", email, project);
 
         if (email == null || email.isBlank() || project == null) {
             throw new IllegalArgumentException("Valores nulos não suportados");
         }
+        User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(email, project.getProjectId()).orElseThrow(() -> new UserNotFoundException("Entidade não encontrada"));
+        log.info("Usuario e projeto localizados: {} {}", user.getUserEmail(), user.getProject().getProjectId());
 
         User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(email, project).orElseThrow(() -> new UserNotFoundException("Entidade não encontrada"));
         return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles());
@@ -48,6 +53,8 @@ public class UserService {
 
 
     public UserEntityResponseDTO createUser(String email, String password, Project project, UserRoles roles) {
+
+        log.info("Criando usuario Email: {} Projeto: {}", email, project);
 
         if (email == null || email.isBlank() || password == null || password.isBlank() || project == null) {
             throw new IllegalArgumentException("Valores nulos não suportados");
@@ -62,10 +69,14 @@ public class UserService {
         }
 
         User user = userRepository.save(new User(email, passwordEncoder.encode(password), UserRoles.ROLE_USER, project));
+
+        log.info("Usuario criado com sucesso: {} {}", user.getUserEmail(), user.getProject().getProjectId());
+
         return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles());
     }
 
     public void softDeleteUser(String email, UUID projectid, boolean status) {
+        log.info("Setando status usuario {} {} para {}", email, projectid, status);
 
         if (email == null || email.isBlank() || projectid == null) {
             throw new IllegalArgumentException("Valores nulos não suportados");
@@ -74,14 +85,18 @@ public class UserService {
         User user = userRepository.findByUserEmailAndProject_ProjectId(email, projectid).orElseThrow(() -> new UserNotFoundException("Usuario nao localizado"));
         user.setActive(status);
         userRepository.save(user);
+
+        log.info("Usuario setado para {} corretamente", user.isActive());
     }
 
 
     @Transactional
     public void generateRecoveryToken(String email, UUID projectId) {
 
+        log.info("Iniciando criaçao de recoverytoken para ussuario {} {}", email, projectId);
+
         if (email == null || email.isBlank() || projectId == null) {
-            return;
+            throw new IllegalArgumentException("Valores nulos não suportados");
         }
 
         User user = userRepository.findByUserEmailAndProject_ProjectId(email, projectId).orElseThrow(() -> new UserNotFoundException("Usuario nao localizado"));
@@ -97,12 +112,16 @@ public class UserService {
         user.setRecoveryTokenExpiry(instant);
 
         User user1 = userRepository.save(user);
-        System.out.println(user1.getRecoveryToken());
+        log.debug("Token de recovery {}", user1.getRecoveryToken());
+        log.info("Token gerado para usuario {} {}", user.getUserEmail(), user.getProject().getProjectId());
         rabbitService.dispararEmailEvento(new EmailEventDTO(user1.getUserEmail(), user1.getProject().getProjectId(), user.getRecoveryToken(), EmailEventDTO.TipoEvento.RECUPERACAO));
+
     }
 
     @Transactional
     public UserEntityResponseDTO recoveryUser(String email, UUID projectId, String newPassword, String recoveryToken) {
+
+        log.info("Iniciando recovery para usuario {} {}", email, projectId);
 
         if (email == null || email.isBlank() || projectId == null || newPassword == null || newPassword.isBlank() || recoveryToken == null || recoveryToken.isBlank()) {
             throw new IllegalArgumentException("Valores nulos não suportados");
@@ -127,6 +146,7 @@ public class UserService {
         user.setRecoveryToken(null);
         user.setUserPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+        log.info("Recuperacao bem sucedida {} {}", user.getUserEmail(), user.getProject().getProjectId());
         return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles());
 
     }
@@ -134,6 +154,8 @@ public class UserService {
 
     @Transactional
     public void generateConfirmUserCode(String userEmail, UUID projectId) {
+
+        log.info("Gerando token de confimacao para usuario {} {}", userEmail, projectId);
 
         if (userEmail == null || userEmail.isBlank() || projectId == null) {
             throw new IllegalArgumentException("Valores nulos não suportados");
@@ -155,16 +177,17 @@ public class UserService {
         user.setConfirmTokenExpiry(confirmTokenExp);
         User user1 = userRepository.save(user);
 
-        System.out.println(user1.getRecoveryToken());
-        rabbitService.dispararEmailEvento(new EmailEventDTO(user1.getUserEmail(), user1.getProject().getProjectId(), user.getConfirmToken(), EmailEventDTO.TipoEvento.CONFIRMACAO));
+        log.info("Token de confirmacao gerado para usuario {} {}", user1.getUserEmail(), user.getProject().getProjectId());
 
-        System.out.println("AQUI ENVIAMOS O EVENTO PARA O RABBIT");
-        System.out.println(user.getConfirmToken());
+        log.debug("Token de confirmacao {}", user1.getConfirmToken());
+        rabbitService.dispararEmailEvento(new EmailEventDTO(user1.getUserEmail(), user1.getProject().getProjectId(), user.getConfirmToken(), EmailEventDTO.TipoEvento.CONFIRMACAO));
 
     }
 
     @Transactional
     public UserEntityResponseDTO confirmUser(String userEmail, UUID projectId, String confirmationCode) {
+
+        log.info("Iniciando confirmacao de usuario {} {}", userEmail, projectId);
 
         if (userEmail == null || userEmail.isBlank() || projectId == null || confirmationCode == null || confirmationCode.isBlank()) {
             throw new IllegalArgumentException("Valores nulos não suportados");
@@ -187,6 +210,7 @@ public class UserService {
         user.setConfirmTokenExpiry(null);
         user.setConfirmToken(null);
         userRepository.save(user);
+        log.info("Usuario confirmado {} {}", user.getUserEmail(), user.getProject().getProjectId());
 
         return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles());
 

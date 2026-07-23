@@ -4,6 +4,7 @@ import com.fernando.iop.exceptions.model.InvalidCredentialsException;
 import com.fernando.iop.exceptions.model.ProjectNotFoundException;
 import com.fernando.iop.exceptions.model.UserAlreadyExistsException;
 import com.fernando.iop.exceptions.model.UserNotFoundException;
+import com.fernando.iop.security.controller.AuthController;
 import com.fernando.iop.security.dto.AuthRequestDTO;
 import com.fernando.iop.security.dto.AuthResponseDTO;
 import com.fernando.iop.project.model.Project;
@@ -13,12 +14,14 @@ import com.fernando.iop.user.enums.UserRoles;
 import com.fernando.iop.user.model.User;
 import com.fernando.iop.user.repository.UserRepository;
 import com.fernando.iop.user.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
-
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
     private final PasswordEncoder bCrypt;
     private final UserRepository userRepository;
     private final TokenService tokenService;
@@ -37,17 +40,21 @@ public class AuthService {
 
     public AuthResponseDTO userLogin(AuthRequestDTO authRequestDTO) {
 
+        log.info("Iniciando login usuario: {}", authRequestDTO.email());
         User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(authRequestDTO.email(), authRequestDTO.projectId()).orElseThrow(()
                 -> new UserNotFoundException("Usuario nao localizado"));
         if (!bCrypt.matches(authRequestDTO.password(), user.getUserPassword())) {
             throw new InvalidCredentialsException("Senha Incorreta");
         } else {
+            log.info("Login realizado para usuario: {}", authRequestDTO.email());
             return new AuthResponseDTO(user.getUserId(), user.getUserEmail(), tokenService.generateToken(new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles())));
         }
 
     }
 
     public UserEntityResponseDTO createUser(AuthRequestDTO authRequestDTO) {
+
+        log.info("Iniciando criacao de usuario: {}", authRequestDTO.email());
 
         if (userRepository.existsByUserEmailAndProject_ProjectId(authRequestDTO.email(), authRequestDTO.projectId())) {
             throw new UserAlreadyExistsException("Usuario já cadastrado");
@@ -57,6 +64,7 @@ public class AuthService {
             throw new ProjectNotFoundException("Projeto nao localizado");
         }
 
+        log.info("Usuario criado com sucesso: {}", authRequestDTO.email());
         return userService.createUser(authRequestDTO.email(), authRequestDTO.password(), new Project(authRequestDTO.projectId()), UserRoles.ROLE_USER);
 
 

@@ -20,7 +20,6 @@ public class AuthController {
         this.authService = authService;
     }
 
-
     @PostMapping(path = "/login")
     public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody AuthRequestDTO authRequestDTO) {
 
