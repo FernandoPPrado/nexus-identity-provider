@@ -42,7 +42,7 @@ public class AuthService {
         if (!bCrypt.matches(authRequestDTO.password(), user.getUserPassword())) {
             throw new InvalidCredentialsException("Senha Incorreta");
         } else {
-            return new AuthResponseDTO(user.getUserId(), user.getUserEmail(), tokenService.generateToken(new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles())));
+            return new AuthResponseDTO(user.getUserId(), user.getUserEmail(), tokenService.generateToken(new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles())));
         }
 
     }
