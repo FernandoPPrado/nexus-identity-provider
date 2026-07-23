@@ -46,6 +46,8 @@ public class UserService {
         }
         User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(email, project.getProjectId()).orElseThrow(() -> new UserNotFoundException("Entidade não encontrada"));
         log.info("Usuario e projeto localizados: {} {}", user.getUserEmail(), user.getProject().getProjectId());
+
+        User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(email, project).orElseThrow(() -> new UserNotFoundException("Entidade não encontrada"));
         return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles());
     }
 
@@ -209,6 +211,7 @@ public class UserService {
         user.setConfirmToken(null);
         userRepository.save(user);
         log.info("Usuario confirmado {} {}", user.getUserEmail(), user.getProject().getProjectId());
+
         return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles());
 
     }

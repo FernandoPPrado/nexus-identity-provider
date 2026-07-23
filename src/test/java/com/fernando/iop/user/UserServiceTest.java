@@ -55,10 +55,10 @@ public class UserServiceTest {
             user1.setConfirmed(true);
             userRepository.save(user1);
 
-            UserEntityResponseDTO user = userService.findUserByEmailAndProjectIdAndActiveTrueAndConfirmed("admin.alpha@iop.com", new Project(uuid));
+            UserEntityResponseDTO user = userService.findUserByEmailAndProjectIdAndActiveTrueAndConfirmed("admin.alpha@iop.com", uuid);
             assertThat(user).isNotNull();
             assertThat(user.userEmail()).isEqualTo("admin.alpha@iop.com");
-            assertThat(user.project().getProjectId()).isEqualTo(uuid);
+            assertThat(user.projectId()).isEqualTo(uuid);
 
         }
 
@@ -72,7 +72,7 @@ public class UserServiceTest {
             userRepository.save(user);
 
             assertThatThrownBy(() -> {
-                userService.findUserByEmailAndProjectIdAndActiveTrueAndConfirmed(user.getUserEmail(), user.getProject());
+                userService.findUserByEmailAndProjectIdAndActiveTrueAndConfirmed(user.getUserEmail(), user.getProject().getProjectId());
             }).isInstanceOf(UserNotFoundException.class);
 
         }
@@ -137,13 +137,13 @@ public class UserServiceTest {
             UUID uuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
             UserEntityResponseDTO user = userService.createUser("teste", "TestPassword", new Project(uuid), UserRoles.ROLE_ADMIN);
 
-            userService.softDeleteUser(user.userEmail(), user.project().getProjectId(), false);
+            userService.softDeleteUser(user.userEmail(), user.projectId(), false);
 
             assertThatThrownBy(() -> {
-                userService.findUserByEmailAndProjectIdAndActiveTrueAndConfirmed(user.userEmail(), user.project());
+                userService.findUserByEmailAndProjectIdAndActiveTrueAndConfirmed(user.userEmail(), user.projectId());
             }).isInstanceOf(UserNotFoundException.class);
 
-            User user1 = userRepository.findByUserEmailAndProject_ProjectId(user.userEmail(), user.project().getProjectId()).orElseThrow();
+            User user1 = userRepository.findByUserEmailAndProject_ProjectId(user.userEmail(), user.projectId()).orElseThrow();
 
             assertThat(user1.getUserEmail()).isEqualTo(user.userEmail());
             assertThat(user1.isActive()).isFalse();
@@ -194,9 +194,9 @@ public class UserServiceTest {
 
             Instant now = Instant.now();
 
-            userService.generateRecoveryToken(userDTO.userEmail(), userDTO.project().getProjectId());
+            userService.generateRecoveryToken(userDTO.userEmail(), userDTO.projectId());
 
-            User userAlterado = userRepository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), userDTO.project().getProjectId()).orElseThrow();
+            User userAlterado = userRepository.findByUserEmailAndProject_ProjectId(userDTO.userEmail(), userDTO.projectId()).orElseThrow();
 
             assertThat(userAlterado.getRecoveryToken()).isNotNull().isNotBlank().isNotEmpty();
             assertThat(userAlterado.getRecoveryTokenExpiry()).isAfter(now);

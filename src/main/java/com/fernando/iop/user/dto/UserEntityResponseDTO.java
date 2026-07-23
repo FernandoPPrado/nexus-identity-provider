@@ -9,7 +9,7 @@ public record UserEntityResponseDTO(
 
         String userEmail,
         Long userId,
-        UUID project,
+        UUID projectId,
         UserRoles userRoles
 
 ) {

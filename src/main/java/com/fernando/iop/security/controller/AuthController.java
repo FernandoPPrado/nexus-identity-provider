@@ -4,6 +4,7 @@ import com.fernando.iop.security.dto.AuthRequestDTO;
 import com.fernando.iop.security.dto.AuthResponseDTO;
 import com.fernando.iop.security.service.AuthService;
 import com.fernando.iop.user.dto.UserEntityResponseDTO;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,14 +21,14 @@ public class AuthController {
     }
 
     @PostMapping(path = "/login")
-    public ResponseEntity<AuthResponseDTO> login(@RequestBody AuthRequestDTO authRequestDTO) {
+    public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody AuthRequestDTO authRequestDTO) {
 
         return ResponseEntity.ok().body(authService.userLogin(authRequestDTO));
 
     }
 
     @PostMapping(path = "/register")
-    public ResponseEntity<UserEntityResponseDTO> createAccount(@RequestBody AuthRequestDTO authRequestDTO) {
+    public ResponseEntity<UserEntityResponseDTO> createAccount(@Valid @RequestBody AuthRequestDTO authRequestDTO) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.createUser(authRequestDTO));
     }
 
