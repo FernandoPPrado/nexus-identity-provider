@@ -36,14 +36,14 @@ public class UserService {
     }
 
 
-    public UserEntityResponseDTO findUserByEmailAndProjectIdAndActiveTrueAndConfirmed(String email, Project project) {
+    public UserEntityResponseDTO findUserByEmailAndProjectIdAndActiveTrueAndConfirmed(String email, UUID project) {
 
         if (email == null || email.isBlank() || project == null) {
             throw new IllegalArgumentException("Valores nulos não suportados");
         }
 
-        User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(email, project.getProjectId()).orElseThrow(() -> new UserNotFoundException("Entidade não encontrada"));
-        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles());
+        User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(email, project).orElseThrow(() -> new UserNotFoundException("Entidade não encontrada"));
+        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles());
     }
 
 
@@ -62,7 +62,7 @@ public class UserService {
         }
 
         User user = userRepository.save(new User(email, passwordEncoder.encode(password), UserRoles.ROLE_USER, project));
-        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles());
+        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles());
     }
 
     public void softDeleteUser(String email, UUID projectid, boolean status) {
@@ -127,7 +127,7 @@ public class UserService {
         user.setRecoveryToken(null);
         user.setUserPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles());
+        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles());
 
     }
 
@@ -188,7 +188,7 @@ public class UserService {
         user.setConfirmToken(null);
         userRepository.save(user);
 
-        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject(), user.getUserRoles());
+        return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles());
 
     }
 
