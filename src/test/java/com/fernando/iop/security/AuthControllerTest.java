@@ -1,5 +1,6 @@
 package com.fernando.iop.security;
 
+import com.fernando.iop.exceptions.model.UserAlreadyExistsException;
 import com.fernando.iop.exceptions.model.UserNotFoundException;
 import com.fernando.iop.security.controller.AuthController;
 import com.fernando.iop.security.dto.AuthRequestDTO;
@@ -13,8 +14,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -27,6 +26,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.UUID;
 
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
 public class AuthControllerTest {
@@ -87,7 +87,6 @@ public class AuthControllerTest {
                             .content(objectMapper.writeValueAsString(authRequestDTO)))
                     .andExpect(status().isInternalServerError())
                     .andExpect(jsonPath("$.status").value(500)).andExpect(jsonPath("message").value("Ocorreu um erro interno inesperado. Tente novamente mais tarde."));
-            ;
 
         }
 
@@ -106,7 +105,20 @@ public class AuthControllerTest {
             mockMvc.perform(post("/auth/register").
                             contentType(MediaType.APPLICATION_JSON).
                             content(objectMapper.writeValueAsString(authRequestDTO)))
-                    .andExpect(status().isCreated()).andExpect(jsonPath("userEmail").value(email)).andExpect(jsonPath("userId").value(userId)).andExpect(jsonPath("projectId").value(projeto.toString())).andExpect(jsonPath("userRoles").value(UserRoles.ROLE_ADMIN.toString()));
+                    .andExpect(status().isCreated()).andExpect(jsonPath("$.userEmail").value(email)).andExpect(jsonPath("$.userId").value(userId)).andExpect(jsonPath("$.projectId").value(projeto.toString())).andExpect(jsonPath("$.userRoles").value(UserRoles.ROLE_ADMIN.toString()));
+
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Deve retornar erro ofuscado 200 OK se usuario existir")
+        public void deveRetornarErroOfuscado200OSeUsuarioExiste() throws Exception {
+
+            when(authService.createUser(any(AuthRequestDTO.class))).thenThrow(UserAlreadyExistsException.class);
+
+            mockMvc.perform(post("/auth/register").
+                            contentType(MediaType.APPLICATION_JSON).
+                            content(objectMapper.writeValueAsString(authRequestDTO)))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.status").value(200)).andExpect(jsonPath("$.message").value("Ok"));
 
         }
 
