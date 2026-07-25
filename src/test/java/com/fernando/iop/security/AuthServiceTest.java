@@ -86,8 +86,44 @@ public class AuthServiceTest {
         @DisplayName("Caminho Triste: Deve lançar erro se a senha estiver incorreta")
         void userLoginDeveLancarErroSeSenhaIncorreta() {
             UUID projectId = UUID.fromString("11111111-2222-3333-4444-555555555555");
+            UUID projectId2 = UUID.randomUUID();
 
-            User user = new User("senhaerrada@iop.com", passwordEncoder.encode("SenhaCorreta123"), UserRoles.ROLE_USER, new Project(projectId));
+            Project project21 = new Project(projectId2);
+
+            projectRepository.save(project21);
+
+            User user = new User("padrao@iop.com", passwordEncoder.encode("SenhaCorreta123"), UserRoles.ROLE_USER, new Project(projectId));
+            user.setActive(true);
+            user.setConfirmed(true);
+            userRepository.save(user);
+
+            User user2 = new User("padrao@iop.com", passwordEncoder.encode("SenhaCorreta1234"), UserRoles.ROLE_USER, project21);
+            user2.setActive(true);
+            user2.setConfirmed(true);
+            userRepository.save(user2);
+
+            AuthRequestDTO request = new AuthRequestDTO("padrao@iop.com", "SenhaCorreta1234", projectId);
+            AuthRequestDTO request2 = new AuthRequestDTO("padrao@iop.com", "SenhaCorreta123", projectId2);
+
+            assertThatThrownBy(() -> {
+                authService.userLogin(request);
+            }).isInstanceOf(InvalidCredentialsException.class);
+
+            assertThatThrownBy(() -> {
+                authService.userLogin(request2);
+            }).isInstanceOf(InvalidCredentialsException.class);
+        }
+
+        @Test
+        @DisplayName("Caminho Triste: Deve lançar erro se usuario logar no projeto 1 com a senha do projeto 2")
+        void userLoginDeveLancarErroSeSenhaIncorretaParaProjetoEvitarVazamentoTenant() {
+            UUID projectId = UUID.fromString("11111111-2222-3333-4444-555555555555");
+
+            Project project = projectRepository.save(new Project(projectId));
+
+            User user = new User("senhaerrada@iop.com", passwordEncoder.encode("SenhaCorreta123"), UserRoles.ROLE_USER, project);
+
+
             user.setActive(true);
             user.setConfirmed(true);
             userRepository.save(user);
