@@ -44,9 +44,9 @@ public class AuthServiceTest {
     @Autowired
     private ProjectRepository projectRepository;
 
+
     @Autowired
     private PasswordEncoder passwordEncoder;
-
 
     @Nested
     @DisplayName("1. Login de Usuário (userLogin)")
