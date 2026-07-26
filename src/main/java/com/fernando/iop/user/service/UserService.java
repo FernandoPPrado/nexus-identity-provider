@@ -38,16 +38,15 @@ public class UserService {
     }
 
 
-    public UserEntityResponseDTO findUserByEmailAndProjectIdAndActiveTrueAndConfirmed(String email, Project project) {
+    public UserEntityResponseDTO findUserByEmailAndProjectIdAndActiveTrueAndConfirmed(String email, UUID project) {
         log.info("Iniciando busca de usuario: Email: {} e Project: {}", email, project);
 
         if (email == null || email.isBlank() || project == null) {
             throw new IllegalArgumentException("Valores nulos não suportados");
         }
-        User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(email, project.getProjectId()).orElseThrow(() -> new UserNotFoundException("Entidade não encontrada"));
+        User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(email, project).orElseThrow(() -> new UserNotFoundException("Entidade não encontrada"));
         log.info("Usuario e projeto localizados: {} {}", user.getUserEmail(), user.getProject().getProjectId());
 
-        User user = userRepository.findByUserEmailAndProject_ProjectIdAndActiveTrueAndConfirmedTrue(email, project).orElseThrow(() -> new UserNotFoundException("Entidade não encontrada"));
         return new UserEntityResponseDTO(user.getUserEmail(), user.getUserId(), user.getProject().getProjectId(), user.getUserRoles());
     }
 
