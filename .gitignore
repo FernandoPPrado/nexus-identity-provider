@@ -31,3 +31,5 @@ application-prod.properties.bak
 application-dev.properties
 anotacoes.txt
 docker-compose.yml
+dockerfile
+.dockerignore
