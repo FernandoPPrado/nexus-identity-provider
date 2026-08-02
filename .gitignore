@@ -33,3 +33,6 @@ anotacoes.txt
 docker-compose.yml
 dockerfile
 .dockerignore
+caddyfile
+SwaggerConfig
+
