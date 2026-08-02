@@ -1,6 +1,7 @@
 package com.fernando.iop.security.configuration;
 
 import org.springframework.beans.factory.annotation.Value;
+import com.fernando.iop.security.ratelimit.RateLimitingFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,6 +18,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -27,7 +29,7 @@ public class SecurityConfig {
 
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, RateLimitingFilter rateLimitingFilter) throws Exception {
         return http
                 // 1. Desabilita CSRF por ser uma API Stateless
                 .csrf(csrf -> csrf.disable())
@@ -42,7 +44,7 @@ public class SecurityConfig {
                 // 3. FAXINA: Desabilita o form HTML tradicional e o Http Basic do navegador
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-
+                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
                 // 4. Regras de autorização das rotas
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/actuator/health").permitAll()
