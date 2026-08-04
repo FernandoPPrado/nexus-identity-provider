@@ -5,7 +5,9 @@ import com.fernando.iop.exceptions.model.UserNotFoundException;
 import com.fernando.iop.security.controller.AuthController;
 import com.fernando.iop.security.dto.AuthRequestDTO;
 import com.fernando.iop.security.dto.AuthResponseDTO;
+import com.fernando.iop.security.ratelimit.RateLimitingFilter;
 import com.fernando.iop.security.service.AuthService;
+import com.fernando.iop.security.service.TokenService;
 import com.fernando.iop.user.dto.UserEntityResponseDTO;
 import com.fernando.iop.user.enums.UserRoles;
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +19,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.handler.annotation.support.MethodArgumentNotValidException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -28,7 +32,10 @@ import java.util.UUID;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AuthController.class)
+@WebMvcTest(
+        controllers = AuthController.class,
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = RateLimitingFilter.class)
+)
 public class AuthControllerTest {
 
     @Autowired
@@ -39,6 +46,9 @@ public class AuthControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @MockitoBean
+    private TokenService tokenService;
 
     private String email = "emailTeste@gmail.com";
     private String senha = "senha123";

@@ -4,6 +4,7 @@ import com.fernando.iop.exceptions.model.InvalidTokenException;
 import com.fernando.iop.exceptions.model.TokenAlreadySentException;
 import com.fernando.iop.exceptions.model.UserAlreadyConfirmedException;
 import com.fernando.iop.exceptions.model.UserNotFoundException;
+import com.fernando.iop.security.ratelimit.RateLimitingFilter;
 import com.fernando.iop.user.controller.UserController;
 import com.fernando.iop.user.dto.UserConfirmTokenRequestDTO;
 import com.fernando.iop.user.dto.UserEntityResponseDTO;
@@ -16,6 +17,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -32,7 +35,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(UserController.class)
+@WebMvcTest(
+        controllers = UserController.class,
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = RateLimitingFilter.class)
+)
 public class UserControllerTest {
 
     @Autowired
