@@ -29,7 +29,7 @@ DatabaseSeeder.java
 application-prod.properties
 application-prod.properties.bak
 application-dev.properties
-anotacoes.txt
+anotacoes.md
 docker-compose.yml
 dockerfile
 .dockerignore
