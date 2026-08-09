@@ -8,6 +8,15 @@
 ![Caddy](https://img.shields.io/badge/Caddy-000000?style=for-the-badge&logo=caddy&logoColor=white)
 ![Oracle Cloud](https://img.shields.io/badge/Oracle_Cloud-F80000?style=for-the-badge&logo=oracle&logoColor=white)
 
+
+## ■ Demonstração
+
+[![Demonstração do Nexus IdP](https://github.com/FernandoPPrado/nexus-identity-provider/raw/main/demo-print.png)](https://github.com/FernandoPPrado/nexus-identity-provider/raw/main/DemoVideo.mp4)
+
+> 💡 **Dica:** Clique na imagem acima para baixar e assistir ao vídeo de demonstração da aplicação em funcionamento.
+
+
+
 > Um Identity Provider (IdP) desenvolvido para explorar arquitetura, segurança e boas práticas de engenharia de software em aplicações Java modernas.
 
 ## O Dilema da Autenticação
