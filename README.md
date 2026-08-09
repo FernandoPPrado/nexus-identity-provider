@@ -1,5 +1,12 @@
 # NEXUS IDENTITY PROVIDER
-Java 21 | Spring Boot 3 | Spring Security | PostgreSQL | RabbitMQ | Docker | Caddy | Oracle Cloud
+![Java](https://img.shields.io/badge/Java_21-ED8B00?style=for-the-badge&logo=java&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot_3-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
+![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=for-the-badge&logo=spring-security&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)
+![Caddy](https://img.shields.io/badge/Caddy-000000?style=for-the-badge&logo=caddy&logoColor=white)
+![Oracle Cloud](https://img.shields.io/badge/Oracle_Cloud-F80000?style=for-the-badge&logo=oracle&logoColor=white)
 
 > Um Identity Provider (IdP) desenvolvido para explorar arquitetura, segurança e boas práticas de engenharia de software em aplicações Java modernas.
 
